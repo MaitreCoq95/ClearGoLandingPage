@@ -1,0 +1,21 @@
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Common ignores
+node_modules/
+.next/
+.env*.local
+.DS_Store
+.vercel
+start-dev.cmd
+start-dev.log
+
+# Source images (copies are in public/images/)
+LittleFlockPremium.png
+StartUp-FRBanner_04.jpg
+ChatGPT*
+
+# Claude local config
+.claude/
