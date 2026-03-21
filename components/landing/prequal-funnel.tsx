@@ -18,13 +18,22 @@ interface Question {
   optional?: boolean
 }
 
+interface Swot {
+  forces: string[]
+  faiblesses: string[]
+  opportunites: string[]
+  menaces: string[]
+}
+
 interface SynthesisData {
   profilType: string
   profilSub: string
+  pills: string[]
   douleurs: string[]
   urgence: 1 | 2 | 3
   reco: string[]
   citation: string
+  swot: Swot
 }
 
 // ─── Questions ───────────────────────────────────────────────────────────────
@@ -292,11 +301,11 @@ const TOTAL = QUESTIONS.length // 15 questions + contact = 16 étapes
 // ─── Synthesis generator ──────────────────────────────────────────────────────
 
 function generateSynthesis(answers: Answers): SynthesisData {
-  const role     = answers.role     ?? ""
-  const phase    = answers.phase    ?? ""
+  const role      = answers.role      ?? ""
+  const phase     = answers.phase     ?? ""
   const structure = answers.structure ?? ""
 
-  // ── Profile type ──
+  // ── Profile type ──────────────────────────────────────────────────────────
   let profilType = "Professionnel du transport"
   let profilSub  = "En quête de structuration et de visibilité"
 
@@ -327,43 +336,74 @@ function generateSynthesis(answers: Answers): SynthesisData {
     profilSub  = "Vision long terme et structuration de la croissance"
   }
 
-  // ── Pain points ──
+  // ── Context pills ─────────────────────────────────────────────────────────
+  const pills: string[] = []
+  if (answers.activite)    pills.push(answers.activite)
+  if (answers.clients)     pills.push(answers.clients)
+  if (answers.flotte)      pills.push(answers.flotte)
+  if (answers.conducteurs) pills.push(`${answers.conducteurs} conducteurs`)
+  if (answers.structure)   pills.push(answers.structure)
+  if (answers.phase)       pills.push(answers.phase.split("—")[0].trim())
+
+  // ── Douleurs (toutes les questions couvertes) ─────────────────────────────
   const douleurs: string[] = []
 
+  // Contrôles
   if (answers.controle === "Un contrôle est prévu dans les 6 mois")
-    douleurs.push("Contrôle imminent — préparation insuffisante")
+    douleurs.push("Contrôle DRIEAT/DREAL imminent — préparation insuffisante")
   if (answers.controle === "Oui, avec des sanctions")
-    douleurs.push("Antécédent de sanctions DRIEAT / DREAL")
+    douleurs.push("Antécédent de sanctions — surveillance renforcée probable")
+
+  // Contrats
   if (answers.contratPerdu === "Oui, ça m'est arrivé")
-    douleurs.push("Perte de contrat par manque de preuve de conformité")
+    douleurs.push("Perte de contrat avérée faute de preuve de conformité")
   if (answers.contratPerdu === "Non, mais je le crains")
     douleurs.push("Risque latent de perte de contrats clients")
+
+  // Documents
   if (answers.docsAJour === "Non, c'est désorganisé")
-    douleurs.push("Documents éparpillés, difficiles à retrouver en urgence")
+    douleurs.push("Documents éparpillés — introuvables en cas de contrôle ou d'urgence")
   if (answers.docsAJour === "Partiellement")
-    douleurs.push("Conformité partielle — des zones grises restent à traiter")
-  if (answers.frein === "Manque de temps")
-    douleurs.push("Pas le temps de gérer la conformité au quotidien")
-  if (answers.frein?.includes("seul"))
-    douleurs.push("Gestion en solo sans ressource dédiée")
-  if (answers.qse === "Non, j'en ai besoin")
-    douleurs.push("Pas de compétence QSE internalisée")
+    douleurs.push("Conformité incomplète — des zones grises non traitées")
+  if (answers.docsAJour === "Je ne sais pas évaluer")
+    douleurs.push("Visibilité nulle sur le niveau réel de conformité")
+
+  // Sécurité / DUERP
   if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre")
-    douleurs.push("DUERP absent — exposition aux risques de sanction en cas de contrôle")
+    douleurs.push("DUERP absent — non-conformité légale, risque de sanction à l'Inspection du Travail")
   if (answers.securite === "DUERP existant mais pas mis à jour")
-    douleurs.push("DUERP non actualisé — non conforme aux obligations légales")
+    douleurs.push("DUERP obsolète — non conforme aux obligations de mise à jour annuelle")
   if (answers.securite === "Je ne sais pas ce que c'est")
-    douleurs.push("Sécurité au travail non couverte — risque légal et humain important")
-  if (phase.includes("Croissance rapide"))
-    douleurs.push("La conformité n'a pas suivi le rythme de la croissance")
+    douleurs.push("Sécurité au travail non couverte — risque légal et humain majeur")
+
+  // Organisation
+  if (answers.frein === "Manque de temps")
+    douleurs.push("Conformité reléguée au second plan par manque de temps")
+  if (answers.frein?.includes("seul"))
+    douleurs.push("Gestion en solo — aucune ressource dédiée à la conformité")
+  if (answers.frein === "Budget limité")
+    douleurs.push("Contrainte budgétaire — risque de sous-investissement sur la conformité")
+  if (answers.frein?.includes("méthode"))
+    douleurs.push("Absence de méthode — ne sait pas par où commencer")
+  if (answers.qse === "Non, j'en ai besoin")
+    douleurs.push("Aucune compétence QSE internalisée")
+
+  // Outils
   if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
-    douleurs.push("Aucun suivi de conformité en place — risque invisible mais réel")
+    douleurs.push("Aucun suivi de conformité en place — exposition invisible mais réelle")
   if (answers.outils === "Papier et classeurs physiques")
-    douleurs.push("Gestion papier — impossible à partager, à auditer ou à mettre à jour en temps réel")
+    douleurs.push("Gestion 100% papier — impossible à partager, auditer ou mettre à jour")
+
+  // Phase
+  if (phase.includes("Croissance rapide"))
+    douleurs.push("Croissance rapide non accompagnée d'une structuration réglementaire")
+  if (phase.includes("Restructuration"))
+    douleurs.push("Phase de restructuration — remise en ordre réglementaire urgente")
+
   if (douleurs.length === 0)
     douleurs.push("Besoin de visibilité objective sur le niveau de conformité")
 
-  // ── Urgency level ──
+  // ── Urgency level ─────────────────────────────────────────────────────────
   let urgence: 1 | 2 | 3 = 1
   if (
     answers.controle === "Un contrôle est prévu dans les 6 mois" ||
@@ -375,69 +415,189 @@ function generateSynthesis(answers: Answers): SynthesisData {
     answers.delai === "1 à 3 mois"
   ) urgence = 2
 
-  // ── Recommendations ──
+  // ── Recommendations (toutes les questions couvertes) ──────────────────────
   const reco: string[] = []
+
   if (urgence === 3)
     reco.push("Diagnostic flash sous 48h — identifier les risques critiques immédiatement")
   if (answers.priorite?.includes("audit"))
     reco.push("Plan de préparation audit personnalisé + checklist des 20 points de contrôle clés")
   if (answers.priorite?.includes("appels d'offres"))
-    reco.push("ClearGo Certificate — preuve de conformité vérifiable par QR code pour vos dossiers AO")
+    reco.push("ClearGo Certificate — preuve vérifiable par QR code pour vos dossiers AO")
   if (answers.priorite?.includes("certification"))
     reco.push("Roadmap certification ISO / GDP structurée étape par étape")
+  if (answers.priorite?.includes("A à Z"))
+    reco.push("Audit complet 360° — couvrir tous les volets réglementaires de A à Z")
+
   if (answers.activite === "Pharma / GDP" || answers.clients?.includes("pharmaceutiques"))
     reco.push("Conformité GDP documentée avec audit trail complet")
   if (answers.activite?.includes("Messagerie") || answers.clients?.includes("E-commerce"))
     reco.push("Conformité DSP calibrée pour les exigences e-commerce (Amazon, Cdiscount…)")
+  if (answers.activite?.includes("ADR"))
+    reco.push("Dossier ADR structuré — formations, équipements et documents en règle")
+  if (answers.activite?.includes("Température"))
+    reco.push("Traçabilité température — conformité ATP et chaîne du froid documentée")
+
+  if (answers.clients?.includes("Grands comptes"))
+    reco.push("Profil ClearGo partageable — répondez aux due diligences grands comptes en 1 lien")
+
   if (answers.docsAJour === "Non, c'est désorganisé")
-    reco.push("Centralisation documentaire — tout au même endroit, à jour en temps réel")
+    reco.push("Centralisation documentaire complète — tout au même endroit, mis à jour en temps réel")
+  if (answers.docsAJour === "Je ne sais pas évaluer")
+    reco.push("Audit documentaire initial — cartographie exacte de ce qui manque")
+
   if (answers.qse === "Non, j'en ai besoin" || answers.frein?.includes("seul"))
     reco.push("Accompagnement complet — ClearGo agit comme votre QSE externalisé")
+
   if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
     reco.push("Module RSE & ISO 14001 — documentez et valorisez vos engagements environnementaux")
   if (answers.rse === "Oui, mais je ne sais pas comment les structurer ou documenter")
     reco.push("Structuration RSE clé en main — transformez vos pratiques en preuves documentées")
   if (answers.rse === "C'est une attente de mes clients — je dois m'y mettre")
-    reco.push("Conformité RSE rapide — répondez aux exigences clients avec les bons documents")
+    reco.push("Conformité RSE express — répondez aux exigences clients sans délai")
+
   if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre" || answers.securite === "Je ne sais pas ce que c'est")
     reco.push("DUERP clé en main — évaluation des risques professionnels conforme ISO 45001")
   if (answers.securite === "DUERP existant mais pas mis à jour")
     reco.push("Mise à jour DUERP + plan de prévention — remise en conformité rapide")
+
   if (answers.roi === "Décrocher 1 nouveau contrat grâce à ma conformité")
-    reco.push("ClearGo Certificate + Trust Score — votre arme commerciale pour convaincre les donneurs d'ordre")
+    reco.push("Trust Score 0-1000 + Certificate — argument commercial concret face aux donneurs d'ordre")
   if (answers.roi === "Éviter une sanction ou un audit raté")
-    reco.push("Checklist audit temps réel — savoir exactement où vous en êtes avant le contrôle")
+    reco.push("Monitoring temps réel — savoir exactement où vous en êtes avant tout contrôle")
   if (answers.roi === "Gagner du temps sur la gestion documentaire")
-    reco.push("Centralisation & automatisation — fini les heures perdues à chercher un document")
+    reco.push("Automatisation documentaire — fini les heures perdues à chercher un document")
   if (answers.roi === "Valoriser mon entreprise auprès de mes clients actuels")
     reco.push("Profil de confiance ClearGo — partageable en 1 lien, vérifiable par vos clients")
+
   if (answers.outils === "Je ne gère pas vraiment — c'est le flou" || answers.outils === "Papier et classeurs physiques")
     reco.push("Migration documentaire complète — on part de zéro et on structure tout ensemble")
   if (answers.outils === "Fichiers Excel / Google Sheets")
     reco.push("Remplacement Excel — plateforme dédiée, collaborative, mise à jour en temps réel")
-  if (reco.length < 2)
-    reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
-  if (reco.length < 3)
-    reco.push("Plan d'action personnalisé avec priorisation des actions à fort impact")
 
-  // ── Citation type ──
+  if (reco.length < 2) reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
+  if (reco.length < 3) reco.push("Plan d'action personnalisé avec priorisation des actions à fort impact")
+
+  // ── Citation type ─────────────────────────────────────────────────────────
   let citation = `"Je veux savoir où j'en suis vraiment, et agir sur ce qui compte."`
   if (urgence === 3)
     citation = `"J'ai besoin de résultats vite — je ne peux pas me permettre d'attendre."`
   else if (answers.contratPerdu === "Oui, ça m'est arrivé")
-    citation = `"Ça ne doit plus se reproduire. Je veux pouvoir prouver ma fiabilité à n'importe qui."`
+    citation = `"Ça ne doit plus se reproduire. Je veux prouver ma fiabilité à n'importe qui."`
   else if (answers.priorite?.includes("appels d'offres"))
     citation = `"Je veux décrocher de nouveaux contrats — mais il me faut les bonnes preuves."`
   else if (answers.priorite?.includes("certification"))
     citation = `"Je veux une certification, mais je ne sais pas par où commencer concrètement."`
+  else if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
+    citation = `"Je sais que je dois m'organiser. Je ne sais juste pas par où attaquer."`
+
+  // ── SWOT ─────────────────────────────────────────────────────────────────
+
+  // Forces — ce que le prospect fait déjà bien
+  const forces: string[] = []
+  if (answers.docsAJour === "Oui, complètement")
+    forces.push("Documents de conformité à jour et bien organisés")
+  if (answers.qse?.includes("dédiée"))
+    forces.push("Responsable QSE internalisé — expertise métier en place")
+  if (answers.controle === "Oui, sans problème")
+    forces.push("Historique de contrôles DRIEAT/DREAL positifs")
+  if (answers.securite === "DUERP à jour et suivi régulièrement")
+    forces.push("DUERP tenu à jour — bonne maîtrise de la sécurité au travail")
+  if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
+    forces.push("Engagements RSE formalisés — levier de différenciation concret")
+  if (answers.outils?.includes("logiciel dédié"))
+    forces.push("Outil de gestion en place — base technique déjà existante")
+  if (answers.phase?.includes("Consolidation"))
+    forces.push("Volonté affirmée de professionnaliser — maturité de gestion")
+  if (answers.conducteurs?.includes("21") || answers.conducteurs?.includes("50+"))
+    forces.push("Structure de taille significative — crédibilité opérationnelle")
+  if (answers.controle === "Non, jamais")
+    forces.push("Aucun antécédent réglementaire — terrain vierge pour structurer")
+  if (forces.length === 0)
+    forces.push("Activité en exercice — expérience terrain solide")
+
+  // Faiblesses — points internes à corriger
+  const faiblesses: string[] = []
+  if (answers.docsAJour === "Non, c'est désorganisé")
+    faiblesses.push("Documents éparpillés — aucune centralisation ni traçabilité")
+  if (answers.docsAJour === "Partiellement")
+    faiblesses.push("Conformité incomplète — zones grises persistantes")
+  if (answers.docsAJour === "Je ne sais pas évaluer")
+    faiblesses.push("Niveau de conformité inconnu — pas de visibilité interne")
+  if (answers.qse === "Non, j'en ai besoin")
+    faiblesses.push("Aucune compétence QSE internalisée")
+  if (answers.qse === "Je gère moi-même")
+    faiblesses.push("QSE géré par le dirigeant — surcharge et risque d'oubli")
+  if (answers.securite?.includes("Pas de DUERP") || answers.securite === "Je ne sais pas ce que c'est")
+    faiblesses.push("DUERP absent — non-conformité légale sur la sécurité")
+  if (answers.securite === "DUERP existant mais pas mis à jour")
+    faiblesses.push("DUERP obsolète — non conforme à l'obligation de mise à jour")
+  if (answers.outils?.includes("flou") || answers.outils?.includes("Papier"))
+    faiblesses.push("Gestion de conformité non structurée — risque opérationnel élevé")
+  if (answers.outils?.includes("Excel"))
+    faiblesses.push("Excel — outil non traçable, non collaboratif, non auditable")
+  if (answers.frein?.includes("seul"))
+    faiblesses.push("Gestion solitaire — aucune ressource dédiée à la conformité")
+  if (answers.frein === "Manque de temps")
+    faiblesses.push("Conformité traitée en urgence — jamais en anticipation")
+  if (faiblesses.length === 0)
+    faiblesses.push("Processus internes à formaliser pour passer à l'échelle")
+
+  // Opportunités — leviers externes à saisir
+  const opportunites: string[] = []
+  if (answers.priorite?.includes("appels d'offres"))
+    opportunites.push("Appels d'offres accessibles grâce à la preuve de conformité")
+  if (answers.priorite?.includes("certification"))
+    opportunites.push("Certification ISO/GDP — levier de crédibilité et d'accès à de nouveaux marchés")
+  if (answers.clients?.includes("Grands comptes"))
+    opportunites.push("Grands comptes — valeur ajoutée forte si conformité prouvée")
+  if (answers.clients?.includes("pharmaceutiques"))
+    opportunites.push("Marché pharma — conformité GDP = accès à un segment premium")
+  if (answers.clients?.includes("E-commerce"))
+    opportunites.push("Marché DSP e-commerce en forte croissance — différenciation par la conformité")
+  if (answers.rse !== "Non, pas encore concerné" && answers.rse)
+    opportunites.push("Démarche RSE — différenciation face à la concurrence et fidélisation clients")
+  if (answers.roi?.includes("Décrocher"))
+    opportunites.push("Conformité = argument commercial direct pour décrocher des contrats")
+  if (phase.includes("Croissance"))
+    opportunites.push("Dynamique de croissance — moment idéal pour structurer avant de scaler")
+  if (answers.activite === "Pharma / GDP")
+    opportunites.push("Spécialisation GDP — niche à forte valeur si conformité irréprochable")
+  if (opportunites.length === 0)
+    opportunites.push("Structuration de la conformité comme levier de croissance durable")
+
+  // Menaces — risques externes à anticiper
+  const menaces: string[] = []
+  if (answers.controle === "Un contrôle est prévu dans les 6 mois")
+    menaces.push("Contrôle DRIEAT/DREAL imminent — risque de sanction à court terme")
+  if (answers.controle === "Oui, avec des sanctions")
+    menaces.push("Antécédents de sanctions — probabilité de surveillance renforcée")
+  if (answers.contratPerdu === "Oui, ça m'est arrivé")
+    menaces.push("Risque de récidive de perte de contrat si rien ne change")
+  if (answers.contratPerdu === "Non, mais je le crains")
+    menaces.push("Pression croissante des donneurs d'ordre sur la preuve de conformité")
+  if (answers.securite?.includes("Pas") || answers.securite === "Je ne sais pas ce que c'est")
+    menaces.push("Risque Inspection du Travail — DUERP absent = infraction immédiate")
+  if (phase.includes("Croissance rapide"))
+    menaces.push("Croissance sans structure réglementaire = fragilité en cas de contrôle")
+  if (answers.frein === "Budget limité")
+    menaces.push("Sous-investissement en conformité — coût d'une sanction bien supérieur")
+  if (answers.clients?.includes("pharmaceutiques") || answers.activite === "Pharma / GDP")
+    menaces.push("Exigences GDP très strictes — non-conformité = exclusion immédiate du marché")
+  if (answers.activite?.includes("ADR"))
+    menaces.push("Réglementation ADR — risques humains et pénaux en cas de manquement")
+  if (menaces.length === 0)
+    menaces.push("Évolution réglementaire constante — veille active indispensable")
 
   return {
     profilType,
     profilSub,
-    douleurs: douleurs.slice(0, 5),
+    pills,
+    douleurs,
     urgence,
-    reco: reco.slice(0, 4),
+    reco,
     citation,
+    swot: { forces, faiblesses, opportunites, menaces },
   }
 }
 
@@ -688,6 +848,20 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 </div>
               </div>
 
+              {/* Pills recap */}
+              {synthesis.pills.length > 0 && (
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {synthesis.pills.map((p) => (
+                    <span
+                      key={p}
+                      className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-[11px] font-semibold text-[#4A5A72]"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {/* Douleurs identifiées */}
               <div className="mb-4 rounded-2xl border border-[#FEE2E2] bg-[#FFF5F5] p-5">
                 <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#EF4444]">
@@ -717,6 +891,71 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                       <p className="text-[13px] text-[#0D2B4E]">{r}</p>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* SWOT */}
+              <div className="mb-5">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
+                  Analyse SWOT — vue d&apos;ensemble
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Forces */}
+                  <div className="rounded-2xl border border-[#BBEDD6] bg-[#F0FBF5] p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#16A34A]">
+                      💪 Forces
+                    </p>
+                    <ul className="flex flex-col gap-1.5">
+                      {synthesis.swot.forces.slice(0, 3).map((f) => (
+                        <li key={f} className="flex items-start gap-1.5">
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#16A34A]" />
+                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Faiblesses */}
+                  <div className="rounded-2xl border border-[#FEE2E2] bg-[#FFF5F5] p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#DC2626]">
+                      ⚠️ Faiblesses
+                    </p>
+                    <ul className="flex flex-col gap-1.5">
+                      {synthesis.swot.faiblesses.slice(0, 3).map((f) => (
+                        <li key={f} className="flex items-start gap-1.5">
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#DC2626]" />
+                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Opportunités */}
+                  <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#2563EB]">
+                      🚀 Opportunités
+                    </p>
+                    <ul className="flex flex-col gap-1.5">
+                      {synthesis.swot.opportunites.slice(0, 3).map((o) => (
+                        <li key={o} className="flex items-start gap-1.5">
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2563EB]" />
+                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{o}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Menaces */}
+                  <div className="rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#EA580C]">
+                      🔥 Menaces
+                    </p>
+                    <ul className="flex flex-col gap-1.5">
+                      {synthesis.swot.menaces.slice(0, 3).map((m) => (
+                        <li key={m} className="flex items-start gap-1.5">
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EA580C]" />
+                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{m}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
 
