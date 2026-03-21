@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { X, ChevronLeft, CheckCircle2, AlertTriangle, Zap, Target, Building2, Loader2 } from "lucide-react"
+import { X, ChevronLeft, CheckCircle2, AlertTriangle, Zap, Target, Building2, Loader2, QrCode, Check } from "lucide-react"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1037,6 +1037,44 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* ClearGo Certificate preview */}
+              <div className="mb-5 rounded-2xl border border-[#CCEDE9] bg-white overflow-hidden" style={{ boxShadow: "0 8px 24px -6px rgba(0,168,150,0.15)" }}>
+                <div className="bg-[#0D2B4E] px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-[#00A896]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#00A896]">ClearGo Certificate</span>
+                  </div>
+                  <QrCode className="h-4 w-4 text-white/40" />
+                </div>
+                <div className="px-5 py-4">
+                  <p className="text-[11px] text-[#94A3B8] mb-1">Votre certificat inclura</p>
+                  <p className="text-[16px] font-black text-[#0D2B4E] mb-3">
+                    {societe || "Votre société"}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="rounded-xl bg-[#0D2B4E] px-3 py-3 text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Score RÉGLO</p>
+                      <p className="text-[22px] font-black leading-none text-white" style={{ letterSpacing: "-1px" }}>—</p>
+                      <p className="text-[10px] text-white/40">/ 500 pts</p>
+                    </div>
+                    <div className="rounded-xl border-2 border-[#00A896] px-3 py-3 text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-[#00A896] mb-0.5">Score EXCELLENCE</p>
+                      <p className="text-[22px] font-black leading-none text-[#00A896]" style={{ letterSpacing: "-1px" }}>—</p>
+                      <p className="text-[10px] text-[#94A3B8]">/ 500 pts</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 rounded-xl bg-[#00A896]/8 border border-[#00A896]/20 px-3 py-2.5">
+                    <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#00A896]">
+                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-[#0D2B4E]">Trust Score 0–1000 · Niveau à calculer</p>
+                      <p className="text-[10px] text-[#4A5A72]">Vérifiable par QR code · valide 12 mois</p>
+                    </div>
                   </div>
                 </div>
               </div>
