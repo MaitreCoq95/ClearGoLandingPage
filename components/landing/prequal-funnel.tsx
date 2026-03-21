@@ -195,6 +195,19 @@ const QUESTIONS: Question[] = [
 
   // ── Bloc 5 : Votre organisation ────────────────────────────────────────────
   {
+    id: "rse",
+    type: "choice",
+    block: "Votre organisation",
+    label: "Avez-vous des engagements RSE ou environnementaux ?",
+    hint: "De plus en plus de donneurs d'ordre l'exigent — c'est aussi un levier de différenciation.",
+    options: [
+      "Oui, c'est une priorité stratégique pour nous",
+      "Oui, mais je ne sais pas comment les structurer ou documenter",
+      "C'est une attente de mes clients — je dois m'y mettre",
+      "Non, pas encore concerné",
+    ],
+  },
+  {
     id: "qse",
     type: "choice",
     block: "Votre organisation",
@@ -331,6 +344,12 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("Centralisation documentaire — tout au même endroit, à jour en temps réel")
   if (answers.qse === "Non, j'en ai besoin" || answers.frein?.includes("seul"))
     reco.push("Accompagnement complet — ClearGo agit comme votre QSE externalisé")
+  if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
+    reco.push("Module RSE & ISO 14001 — documentez et valorisez vos engagements environnementaux")
+  if (answers.rse === "Oui, mais je ne sais pas comment les structurer ou documenter")
+    reco.push("Structuration RSE clé en main — transformez vos pratiques en preuves documentées")
+  if (answers.rse === "C'est une attente de mes clients — je dois m'y mettre")
+    reco.push("Conformité RSE rapide — répondez aux exigences clients avec les bons documents")
   if (reco.length < 2)
     reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
   if (reco.length < 3)
@@ -466,6 +485,7 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           priorite:          answers.priorite,
           frein_principal:   answers.frein,
           declic_libre:      answers.declicLibre,
+          rse:               answers.rse,
           responsable_qse:   answers.qse,
           docs_a_jour:       answers.docsAJour,
           delai_souhaite:    answers.delai,
