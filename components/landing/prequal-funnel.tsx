@@ -192,8 +192,34 @@ const QUESTIONS: Question[] = [
       "Ex : j'ai failli perdre un gros client qui me demandait une preuve de conformité...",
     optional: true,
   },
+  {
+    id: "roi",
+    type: "choice",
+    block: "Vos objectifs",
+    label: "Qu'est-ce qui justifierait l'investissement pour vous ?",
+    hint: "Ce qui compte vraiment au bout du compte.",
+    options: [
+      "Décrocher 1 nouveau contrat grâce à ma conformité",
+      "Éviter une sanction ou un audit raté",
+      "Gagner du temps sur la gestion documentaire",
+      "Valoriser mon entreprise auprès de mes clients actuels",
+    ],
+  },
 
   // ── Bloc 5 : Votre organisation ────────────────────────────────────────────
+  {
+    id: "outils",
+    type: "choice",
+    block: "Votre organisation",
+    label: "Comment gérez-vous votre conformité aujourd'hui ?",
+    hint: "Pour comprendre d'où vous partez.",
+    options: [
+      "Fichiers Excel / Google Sheets",
+      "Papier et classeurs physiques",
+      "Un logiciel dédié (ERP, TMS…)",
+      "Je ne gère pas vraiment — c'est le flou",
+    ],
+  },
   {
     id: "rse",
     type: "choice",
@@ -330,6 +356,10 @@ function generateSynthesis(answers: Answers): SynthesisData {
     douleurs.push("Sécurité au travail non couverte — risque légal et humain important")
   if (phase.includes("Croissance rapide"))
     douleurs.push("La conformité n'a pas suivi le rythme de la croissance")
+  if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
+    douleurs.push("Aucun suivi de conformité en place — risque invisible mais réel")
+  if (answers.outils === "Papier et classeurs physiques")
+    douleurs.push("Gestion papier — impossible à partager, à auditer ou à mettre à jour en temps réel")
   if (douleurs.length === 0)
     douleurs.push("Besoin de visibilité objective sur le niveau de conformité")
 
@@ -373,6 +403,18 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("DUERP clé en main — évaluation des risques professionnels conforme ISO 45001")
   if (answers.securite === "DUERP existant mais pas mis à jour")
     reco.push("Mise à jour DUERP + plan de prévention — remise en conformité rapide")
+  if (answers.roi === "Décrocher 1 nouveau contrat grâce à ma conformité")
+    reco.push("ClearGo Certificate + Trust Score — votre arme commerciale pour convaincre les donneurs d'ordre")
+  if (answers.roi === "Éviter une sanction ou un audit raté")
+    reco.push("Checklist audit temps réel — savoir exactement où vous en êtes avant le contrôle")
+  if (answers.roi === "Gagner du temps sur la gestion documentaire")
+    reco.push("Centralisation & automatisation — fini les heures perdues à chercher un document")
+  if (answers.roi === "Valoriser mon entreprise auprès de mes clients actuels")
+    reco.push("Profil de confiance ClearGo — partageable en 1 lien, vérifiable par vos clients")
+  if (answers.outils === "Je ne gère pas vraiment — c'est le flou" || answers.outils === "Papier et classeurs physiques")
+    reco.push("Migration documentaire complète — on part de zéro et on structure tout ensemble")
+  if (answers.outils === "Fichiers Excel / Google Sheets")
+    reco.push("Remplacement Excel — plateforme dédiée, collaborative, mise à jour en temps réel")
   if (reco.length < 2)
     reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
   if (reco.length < 3)
@@ -508,6 +550,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           priorite:          answers.priorite,
           frein_principal:   answers.frein,
           declic_libre:      answers.declicLibre,
+          roi_attendu:       answers.roi,
+          outils_actuels:    answers.outils,
           rse:               answers.rse,
           securite_duerp:    answers.securite,
           responsable_qse:   answers.qse,
@@ -596,6 +640,21 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
               className="h-full bg-[#00A896]"
               style={{ width: `${progress}%`, transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)" }}
             />
+          </div>
+        )}
+
+        {/* ── Social proof strip ── */}
+        {!isDone && !isContact && (
+          <div className="flex items-center justify-center gap-4 border-b border-[#F0F4F8] bg-[#F8FAFC] px-6 py-2">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4A5A72]">
+              <span>⏱</span>
+              <span>1 min 45</span>
+            </span>
+            <span className="h-3 w-px bg-[#CBD5E1]" />
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4A5A72]">
+              <span>✅</span>
+              <span><strong className="text-[#0D2B4E]">3 284</strong> transporteurs ont déjà répondu</span>
+            </span>
           </div>
         )}
 
