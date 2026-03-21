@@ -208,6 +208,19 @@ const QUESTIONS: Question[] = [
     ],
   },
   {
+    id: "securite",
+    type: "choice",
+    block: "Votre organisation",
+    label: "Où en êtes-vous sur la sécurité au travail ?",
+    hint: "DUERP, ISO 45001, accidents du travail — un angle souvent négligé mais très contrôlé.",
+    options: [
+      "DUERP à jour et suivi régulièrement",
+      "DUERP existant mais pas mis à jour",
+      "Pas de DUERP formalisé — je dois m'y mettre",
+      "Je ne sais pas ce que c'est",
+    ],
+  },
+  {
     id: "qse",
     type: "choice",
     block: "Votre organisation",
@@ -309,6 +322,12 @@ function generateSynthesis(answers: Answers): SynthesisData {
     douleurs.push("Gestion en solo sans ressource dédiée")
   if (answers.qse === "Non, j'en ai besoin")
     douleurs.push("Pas de compétence QSE internalisée")
+  if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre")
+    douleurs.push("DUERP absent — exposition aux risques de sanction en cas de contrôle")
+  if (answers.securite === "DUERP existant mais pas mis à jour")
+    douleurs.push("DUERP non actualisé — non conforme aux obligations légales")
+  if (answers.securite === "Je ne sais pas ce que c'est")
+    douleurs.push("Sécurité au travail non couverte — risque légal et humain important")
   if (phase.includes("Croissance rapide"))
     douleurs.push("La conformité n'a pas suivi le rythme de la croissance")
   if (douleurs.length === 0)
@@ -350,6 +369,10 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("Structuration RSE clé en main — transformez vos pratiques en preuves documentées")
   if (answers.rse === "C'est une attente de mes clients — je dois m'y mettre")
     reco.push("Conformité RSE rapide — répondez aux exigences clients avec les bons documents")
+  if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre" || answers.securite === "Je ne sais pas ce que c'est")
+    reco.push("DUERP clé en main — évaluation des risques professionnels conforme ISO 45001")
+  if (answers.securite === "DUERP existant mais pas mis à jour")
+    reco.push("Mise à jour DUERP + plan de prévention — remise en conformité rapide")
   if (reco.length < 2)
     reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
   if (reco.length < 3)
@@ -486,6 +509,7 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           frein_principal:   answers.frein,
           declic_libre:      answers.declicLibre,
           rse:               answers.rse,
+          securite_duerp:    answers.securite,
           responsable_qse:   answers.qse,
           docs_a_jour:       answers.docsAJour,
           delai_souhaite:    answers.delai,
