@@ -1096,13 +1096,6 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                   </div>
                 </div>
 
-                {/* Société */}
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Société</label>
-                  <input type="text" required value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
-                </div>
-
                 {/* SIRET */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
@@ -1156,6 +1149,16 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Société */}
+                <div>
+                  <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
+                    Société
+                    <span className="font-normal normal-case text-[#94A3B8]">(optionnel)</span>
+                  </label>
+                  <input type="text" value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
+                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
                 </div>
 
                 {/* Email */}
