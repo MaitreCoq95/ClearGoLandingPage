@@ -1,11 +1,67 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { X, ChevronLeft, CheckCircle2, AlertTriangle, Zap, Target } from "lucide-react"
+import { X, ChevronLeft, CheckCircle2, AlertTriangle, Zap, Target, Building2, Loader2 } from "lucide-react"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Answers = Record<string, string>
+
+interface SiretData {
+  nom: string
+  siren: string
+  siret: string
+  adresse: string
+  ville: string
+  codePostal: string
+  naf: string
+  libelleNaf: string
+  effectif: string
+  dateCreation: string
+  formeJuridique: string
+  isTransport: boolean
+}
+
+const EFFECTIF_LABELS: Record<string, string> = {
+  "00": "Non employeur", "01": "1 à 2 salariés", "02": "3 à 5 salariés",
+  "03": "6 à 9 salariés", "11": "10 à 19 salariés", "12": "20 à 49 salariés",
+  "21": "50 à 99 salariés", "22": "100 à 199 salariés", "31": "200 à 249 salariés",
+  "32": "250 à 499 salariés", "41": "500 à 999 salariés", "42": "1 000 à 1 999 salariés",
+  "51": "2 000 à 4 999 salariés", "52": "5 000 à 9 999 salariés", "53": "10 000+ salariés",
+}
+
+const TRANSPORT_NAF = ["4941", "4942", "4939", "4932", "5229", "5210", "5224", "4931", "4950"]
+
+async function fetchSiretData(siret: string): Promise<SiretData | null> {
+  try {
+    const res = await fetch(
+      `https://recherche-entreprises.api.gouv.fr/search?q=${siret.replace(/\s/g, "")}&page=1&per_page=1`
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const r = data.results?.[0]
+    if (!r) return null
+    const nafCode = (r.activite_principale ?? "").replace(".", "").slice(0, 4)
+    return {
+      nom:             r.nom_complet ?? "",
+      siren:           r.siren ?? "",
+      siret:           r.siege?.siret ?? siret,
+      adresse:         r.siege?.adresse ?? "",
+      ville:           r.siege?.commune ?? "",
+      codePostal:      r.siege?.code_postal ?? "",
+      naf:             r.activite_principale ?? "",
+      libelleNaf:      r.libelle_activite_principale?.naf ?? "",
+      effectif:        EFFECTIF_LABELS[r.tranche_effectif_salarie ?? ""] ?? "Non renseigné",
+      dateCreation:    r.date_creation
+        ? new Date(r.date_creation).toLocaleDateString("fr-FR", { year: "numeric", month: "long" })
+        : "",
+      formeJuridique:  r.nature_juridique ?? "",
+      isTransport:     TRANSPORT_NAF.some((c) => nafCode.startsWith(c)),
+    }
+  } catch {
+    return null
+  }
+}
 
 interface Question {
   id: string
@@ -613,13 +669,18 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const [answers, setAnswers]     = useState<Answers>({})
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const [animating, setAnimating] = useState(false)
-  const [prenom, setPrenom]       = useState("")
-  const [nom, setNom]             = useState("")
-  const [email, setEmail]         = useState("")
-  const [tel, setTel]             = useState("")
-  const [sending, setSending]     = useState(false)
-  const [synthesis, setSynthesis] = useState<SynthesisData | null>(null)
-  const textareaRef               = useRef<HTMLTextAreaElement>(null)
+  const [prenom, setPrenom]           = useState("")
+  const [nom, setNom]                 = useState("")
+  const [societe, setSociete]         = useState("")
+  const [siret, setSiret]             = useState("")
+  const [siretData, setSiretData]     = useState<SiretData | null>(null)
+  const [siretLoading, setSiretLoading] = useState(false)
+  const [siretError, setSiretError]   = useState(false)
+  const [email, setEmail]             = useState("")
+  const [tel, setTel]                 = useState("")
+  const [sending, setSending]         = useState(false)
+  const [synthesis, setSynthesis]     = useState<SynthesisData | null>(null)
+  const textareaRef                   = useRef<HTMLTextAreaElement>(null)
 
   const isDone    = step === TOTAL + 1
   const isContact = step === TOTAL
@@ -633,13 +694,9 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     document.body.style.overflow = open ? "hidden" : ""
     if (!open) {
       setTimeout(() => {
-        setStep(0)
-        setAnswers({})
-        setPrenom("")
-        setNom("")
-        setEmail("")
-        setTel("")
-        setSynthesis(null)
+        setStep(0); setAnswers({}); setPrenom(""); setNom("")
+        setSociete(""); setSiret(""); setSiretData(null)
+        setSiretError(false); setEmail(""); setTel(""); setSynthesis(null)
       }, 300)
     }
     return () => { document.body.style.overflow = "" }
@@ -652,6 +709,19 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     window.addEventListener("keydown", h)
     return () => window.removeEventListener("keydown", h)
   }, [close])
+
+  // Auto-fetch SIRET when 14 digits entered
+  useEffect(() => {
+    const clean = siret.replace(/\s/g, "")
+    if (clean.length !== 14) { setSiretData(null); setSiretError(false); return }
+    setSiretLoading(true)
+    setSiretError(false)
+    fetchSiretData(clean).then((d) => {
+      setSiretLoading(false)
+      if (d) { setSiretData(d); if (!societe) setSociete(d.nom) }
+      else setSiretError(true)
+    })
+  }, [siret]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus textarea on open question
   useEffect(() => {
@@ -696,7 +766,19 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source: "funnel",
-          prenom, nom, email, tel,
+          prenom, nom, societe, email, tel,
+          siret:            siretData?.siret ?? siret,
+          siren:            siretData?.siren ?? "",
+          societe_legale:   siretData?.nom ?? societe,
+          adresse:          siretData?.adresse ?? "",
+          ville:            siretData?.ville ?? "",
+          code_postal:      siretData?.codePostal ?? "",
+          naf:              siretData?.naf ?? "",
+          libelle_naf:      siretData?.libelleNaf ?? "",
+          effectif_sirene:  siretData?.effectif ?? "",
+          date_creation:    siretData?.dateCreation ?? "",
+          forme_juridique:  siretData?.formeJuridique ?? "",
+          is_transport:     siretData?.isTransport ?? false,
           role:              answers.role,
           structure:         answers.structure,
           phase:             answers.phase,
@@ -999,52 +1081,97 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 On génère votre profil personnalisé et on vous recontacte sous 24h.
               </p>
               <form onSubmit={submitContact} className="flex flex-col gap-4">
+
+                {/* Prénom + Nom */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                      Prénom
-                    </label>
-                    <input
-                      type="text" required value={prenom}
-                      onChange={(e) => setPrenom(e.target.value)}
-                      placeholder="Jean"
-                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white"
-                    />
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Prénom</label>
+                    <input type="text" required value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Jean"
+                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                      Nom
-                    </label>
-                    <input
-                      type="text" required value={nom}
-                      onChange={(e) => setNom(e.target.value)}
-                      placeholder="Dupont"
-                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white"
-                    />
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Nom</label>
+                    <input type="text" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont"
+                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
                   </div>
                 </div>
+
+                {/* Société */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                    Email professionnel
-                  </label>
-                  <input
-                    type="email" required value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="jean@transport.fr"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white"
-                  />
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Société</label>
+                  <input type="text" required value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
+                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
                 </div>
+
+                {/* SIRET */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                    Téléphone{" "}
-                    <span className="font-normal normal-case text-[#94A3B8]">(optionnel)</span>
+                  <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
+                    SIRET
+                    <span className="font-normal normal-case text-[#94A3B8]">(optionnel — on vérifie automatiquement)</span>
+                    {siretLoading && <Loader2 className="h-3 w-3 animate-spin text-[#00A896]" />}
                   </label>
                   <input
-                    type="tel" value={tel}
-                    onChange={(e) => setTel(e.target.value)}
-                    placeholder="06 XX XX XX XX"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white"
+                    type="text" value={siret}
+                    onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
+                    placeholder="362 521 879 00034"
+                    maxLength={17}
+                    className={`w-full rounded-xl border-2 bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:bg-white ${
+                      siretData ? "border-[#00A896]" : siretError ? "border-[#EF4444]" : "border-[#E2E8F0] focus:border-[#00A896]"
+                    }`}
                   />
+                  {siretError && (
+                    <p className="mt-1 text-[11px] text-[#EF4444]">SIRET non trouvé — vérifiez les 14 chiffres</p>
+                  )}
+
+                  {/* Carte société vérifiée */}
+                  {siretData && (
+                    <div className="mt-3 rounded-xl border border-[#CCEDE9] bg-[#F0FAFA] p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#00A896]">
+                          <Building2 className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-[13px] font-black text-[#0D2B4E] truncate">{siretData.nom}</p>
+                            {siretData.isTransport && (
+                              <span className="flex-shrink-0 rounded-full bg-[#00A896] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Transport ✓</span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                            {siretData.adresse && (
+                              <p className="col-span-2 text-[11px] text-[#4A5A72]">📍 {siretData.adresse}, {siretData.codePostal} {siretData.ville}</p>
+                            )}
+                            {siretData.libelleNaf && (
+                              <p className="text-[11px] text-[#4A5A72]">🏷 {siretData.naf} — {siretData.libelleNaf}</p>
+                            )}
+                            {siretData.effectif && (
+                              <p className="text-[11px] text-[#4A5A72]">👥 {siretData.effectif}</p>
+                            )}
+                            {siretData.dateCreation && (
+                              <p className="text-[11px] text-[#4A5A72]">📅 Créée en {siretData.dateCreation}</p>
+                            )}
+                            <p className="text-[11px] text-[#4A5A72]">🔢 SIREN {siretData.siren}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Email professionnel</label>
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@transport.fr"
+                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
+                </div>
+
+                {/* Téléphone */}
+                <div>
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
+                    Téléphone <span className="font-normal normal-case text-[#94A3B8]">(optionnel)</span>
+                  </label>
+                  <input type="tel" value={tel} onChange={(e) => setTel(e.target.value)} placeholder="06 XX XX XX XX"
+                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
                 </div>
                 <button
                   type="submit" disabled={sending}
