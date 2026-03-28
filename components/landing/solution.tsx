@@ -116,7 +116,7 @@ export function Solution() {
         >
           <div className="mb-4 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#00A896]">
             <span className="h-px w-8 bg-[#00A896]" />
-            La solution
+            CaaS — Compliance as a Service
             <span className="h-px w-8 bg-[#00A896]" />
           </div>
           <h2
@@ -128,7 +128,7 @@ export function Solution() {
             Un score de confiance en sort.
           </h2>
           <p className="mt-4 text-[17px] text-[#4A5A72]">
-            Un seul chiffre. Lisible par n'importe quel donneur d'ordre, auditeur ou inspecteur.
+            Un seul chiffre. Lisible par n'importe quel donneur d'ordre, auditeur ou inspecteur. Conçu pour les transporteurs routiers.
           </p>
         </div>
 

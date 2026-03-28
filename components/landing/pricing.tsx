@@ -39,15 +39,15 @@ export function Pricing({ onCta }: PricingProps) {
             transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1)",
           }}
         >
-          <div className="section-eyebrow mb-4" style={{ justifyContent: "center" }}>Tarifs</div>
+          <div className="section-eyebrow mb-4" style={{ justifyContent: "center" }}>Tarifs CaaS</div>
           <h2
             className="font-black text-[#0D2B4E]"
             style={{ fontSize: "clamp(32px, 4.5vw, 56px)", letterSpacing: "-2px", lineHeight: 1.05 }}
           >
-            De 199 € à l'abonnement — sans friction.
+            Diagnostic d'abord. Abonnement ensuite.
           </h2>
           <p className="mt-3 text-[16px] text-[#4A5A72]">
-            Une amende DRIEAT couvre un an d'abonnement.
+            Une amende DRIEAT couvre un an d'abonnement. Commencez par la pré-qualification gratuite.
           </p>
         </div>
 
@@ -75,9 +75,9 @@ export function Pricing({ onCta }: PricingProps) {
             <ul className="mt-6 flex-1 flex flex-col gap-2.5">
               {[
                 "Pré-qualification gratuite incluse",
-                "Session accompagnée 45–60 min",
-                "Trust Score 0–1000 complet",
-                "Rapport PDF certifié + plan d'action",
+                "Préparation documentaire guidée",
+                "Session accompagnée 45 min incluse",
+                "Trust Score 0–1000 + rapport PDF + plan d'action",
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2.5 text-[13px] text-[#4A5A72]">
                   <Check className="h-4 w-4 text-[#00A896] flex-shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -85,17 +85,18 @@ export function Pricing({ onCta }: PricingProps) {
                 </li>
               ))}
             </ul>
+            <p className="mt-4 text-[11px] text-[#E65100] font-semibold">🎁 Diagnostic offert si engagement accompagnement (SITL)</p>
             <button
               onClick={onCta}
               data-cta
-              className="btn-press mt-7 w-full rounded-2xl bg-[#00A896] py-3.5 text-[14px] font-bold text-white"
+              className="btn-press mt-3 w-full rounded-2xl bg-[#00A896] py-3.5 text-[14px] font-bold text-white"
               style={{ boxShadow: "0 4px 16px -4px rgba(0,168,150,0.4)" }}
             >
-              Démarrer le diagnostic →
+              Démarrer ma pré-qualification →
             </button>
           </div>
 
-          {/* ② Essentiel */}
+          {/* ② Abonnement CaaS */}
           <div
             className="card-lift flex flex-col rounded-3xl border-2 border-[#E2E8F0] bg-white p-7"
             style={{
@@ -104,13 +105,13 @@ export function Pricing({ onCta }: PricingProps) {
               transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 80ms",
             }}
           >
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#94A3B8]">Essentiel</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#94A3B8]">Abonnement CaaS</p>
             <div className="mt-3 flex items-baseline">
               <span className="text-[42px] font-black leading-none text-[#0D2B4E]" style={{ letterSpacing: "-2px" }}>99</span>
               <span className="ml-1 text-[16px] font-bold text-[#0D2B4E]">€</span>
               <span className="ml-1 text-[13px] text-[#94A3B8]">/mois</span>
             </div>
-            <p className="text-[12px] italic text-[#94A3B8] mt-0.5">À partir de</p>
+            <p className="text-[12px] italic text-[#94A3B8] mt-0.5">Compliance as a Service · À partir de</p>
             <ul className="mt-6 flex-1 flex flex-col gap-2.5">
               {["Score RÉGLO en continu", "Chatbot compliance intégré", "Accès templates & outils de base"].map((f) => (
                 <li key={f} className="flex items-start gap-2.5 text-[13px] text-[#4A5A72]">

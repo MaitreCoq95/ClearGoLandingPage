@@ -66,10 +66,10 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
             <span className="h-px w-6 bg-[#00A896]" />
           </div>
           <h3 className="text-[22px] font-black text-[#0D2B4E] mb-1">
-            Démarrez à 199 €
+            Transporteurs : démarrez maintenant
           </h3>
           <p className="text-[14px] text-[#4A5A72] mb-6">
-            Trust Score · Rapport PDF certifié · Plan d'action — résultat en 24h
+            Pré-qualification gratuite · Diagnostic à partir de juin (199 €) · Abonnement CaaS 99 €/mois
           </p>
 
           <button
@@ -78,10 +78,10 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
             className="btn-press w-full rounded-2xl bg-[#00A896] py-4 text-[17px] font-extrabold text-white mb-3"
             style={{ boxShadow: "0 8px 32px -4px rgba(0,168,150,0.45)" }}
           >
-            Commencer ma pré-qualification gratuite →
+            Démarrer ma pré-qualification gratuite →
           </button>
 
-          <p className="text-[12px] text-[#94A3B8]">Gratuit · Sans engagement · 5 minutes</p>
+          <p className="text-[12px] text-[#94A3B8]">Réservé aux transporteurs · Sans engagement · 5 minutes</p>
 
           {/* SITL badge */}
           <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
@@ -92,7 +92,7 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
           </div>
         </div>
 
-        {/* Audiences */}
+        {/* Transporteur proof points */}
         <div
           className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-10"
           style={{
@@ -102,9 +102,9 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
           }}
         >
           {[
-            { icon: "🚛", title: "Transporteurs", desc: "Qualifiez-vous" },
-            { icon: "🏭", title: "Donneurs d'ordre", desc: "Vérifiez vos prestataires" },
-            { icon: "📈", title: "Investisseurs", desc: "Construisons ensemble" },
+            { icon: "🚛", title: "Transporteurs TRM", desc: "Notre cible principale" },
+            { icon: "📋", title: "Conformité terrain", desc: "Pas de jargon inutile" },
+            { icon: "🔒", title: "Données sécurisées", desc: "Hébergées en France" },
           ].map((a) => (
             <div key={a.title} className="flex flex-col items-center gap-2 text-white/50">
               <span className="text-3xl">{a.icon}</span>

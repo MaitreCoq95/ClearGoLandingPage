@@ -40,11 +40,11 @@ const ETAPES = [
     badgeBg: "#FFF3E0",
     badgeColor: "#E65100",
     title: "Diagnostic complet",
-    time: "Offre SITL — 299 € standard",
+    time: "Dispo à partir de juin · 299 € standard",
     items: [
-      "Ouverture du diagnostic complet",
-      "Préparation documentaire guidée",
+      "Préparation documentaire guidée en amont",
       "Paiement à cette étape uniquement",
+      "Diagnostic offert si engagement accompagnement (offre SITL)",
     ],
     note: "Fenêtre active : 5 à 7 jours",
     accent: "#FFCC80",
@@ -55,10 +55,10 @@ const ETAPES = [
     badgeBg: "#E6F7F5",
     badgeColor: "#00A896",
     title: "Session accompagnée",
-    time: "En live avec vous",
+    time: "En live avec vous — incluse dans le diagnostic",
     items: [
-      "Documents préparés en amont",
-      "Session live pour remplir correctement",
+      "Documents préparés en amont par vous",
+      "Session de 45 min pour remplir correctement",
       "Accompagnement humain concret",
     ],
     note: "Pas juste technique. De la vraie valeur humaine.",
@@ -81,10 +81,10 @@ const ETAPES = [
   },
   {
     num: "05",
-    badge: "79 €/mois",
+    badge: "99 €/mois",
     badgeBg: "#E6F7F5",
     badgeColor: "#00A896",
-    title: "Abonnement SaaS",
+    title: "Abonnement CaaS",
     time: "Suivi continu",
     items: [
       "Score mis à jour en temps réel",
@@ -116,7 +116,7 @@ export function Parcours({ onCta }: ParcoursProps) {
             transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1)",
           }}
         >
-          <div className="section-eyebrow mb-4">Le parcours</div>
+          <div className="section-eyebrow mb-4">Le parcours CaaS</div>
           <h2
             className="font-black text-[#0D2B4E]"
             style={{ fontSize: "clamp(32px, 4.5vw, 56px)", letterSpacing: "-2px", lineHeight: 1.05 }}
@@ -125,7 +125,7 @@ export function Parcours({ onCta }: ParcoursProps) {
             <br />
             progressif et actionnable.
           </h2>
-          <p className="mt-3 text-[17px] italic text-[#00A896]">Pas une usine à gaz.</p>
+          <p className="mt-3 text-[17px] italic text-[#00A896]">Réservé aux transporteurs. Pas une usine à gaz.</p>
         </div>
 
         {/* Steps — vertical on mobile, horizontal table on desktop */}
@@ -227,11 +227,14 @@ export function Parcours({ onCta }: ParcoursProps) {
             transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.55s",
           }}
         >
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#00A896]/40 bg-[#00A896]/10 px-4 py-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">Compliance as a Service</span>
+          </div>
           <p className="text-[18px] font-bold text-white/70 mb-2">
-            On entre gratuitement. On progresse naturellement.
+            La pré-qualification, c'est maintenant — c'est gratuit.
           </p>
           <p className="text-[18px] font-bold text-white mb-6">
-            On reste parce que ça vaut le coup.
+            Le diagnostic complet vous attend à partir de juin.
           </p>
           <button
             onClick={onCta}
@@ -239,8 +242,9 @@ export function Parcours({ onCta }: ParcoursProps) {
             className="btn-press inline-flex items-center gap-2 rounded-2xl bg-[#00A896] px-8 py-4 text-[16px] font-bold text-white"
             style={{ boxShadow: "0 8px 32px -4px rgba(0,168,150,0.4)" }}
           >
-            Commencer — c'est gratuit →
+            Démarrer ma pré-qualification →
           </button>
+          <p className="mt-3 text-[13px] text-white/35">Transporteurs uniquement · Sans engagement</p>
         </div>
       </div>
     </section>
