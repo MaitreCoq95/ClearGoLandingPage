@@ -18,6 +18,7 @@ import { StickyMobileCta } from "@/components/landing/sticky-mobile-cta"
 import { KioskBanner, useKioskMode } from "@/components/landing/kiosk-banner"
 import { PrequalFunnel } from "@/components/landing/prequal-funnel"
 import { PhotoShowcase } from "@/components/landing/photo-showcase"
+import { NameSemantics } from "@/components/landing/name-semantics"
 
 function LandingContent() {
   const isKiosk = useKioskMode()
@@ -32,6 +33,7 @@ function LandingContent() {
 
       <Hero onCta={openFunnel} />
       <VideoShowcase />
+      <NameSemantics />
       <PhotoShowcase onCta={openFunnel} />
       <SocialProof />
       <Problems />
