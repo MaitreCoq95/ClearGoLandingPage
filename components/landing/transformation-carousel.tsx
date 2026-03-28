@@ -58,7 +58,7 @@ const SLIDES = [
     note: "Plus vous êtes préparé, plus la session est efficace.",
     accent: "#A78BFA",
     icon: <FolderOpen className="h-6 w-6" style={{ color: "#A78BFA" }} strokeWidth={2.5} />,
-    // image: "/images/steps/step-03.jpg", // à ajouter dès réception de l'image
+    image: "/images/steps/step-03.jpg",
   },
   {
     step: "04",
