@@ -29,33 +29,36 @@ interface FeatureCarouselProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 const SlideCard = ({ slide, isCenter }: { slide: CarouselSlide; isCenter: boolean }) => (
   <div
     className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/10"
-    style={{ boxShadow: isCenter ? '0 32px 64px -16px rgba(0,0,0,0.6)' : 'none' }}
+    style={{
+      background: '#07121E',
+      boxShadow: isCenter ? '0 32px 64px -16px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)' : 'none',
+    }}
   >
     {/* Background image */}
     {slide.image && (
       <>
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700"
-          style={{ backgroundImage: `url(${slide.image})`, transform: isCenter ? 'scale(1.03)' : 'scale(1)' }}
+          style={{ backgroundImage: `url(${slide.image})`, transform: isCenter ? 'scale(1.04)' : 'scale(1)' }}
         />
-        {/* Gradient overlay — stronger at bottom for readability */}
+        {/* Strong overlay — image visible top, solid dark bottom for text */}
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(to bottom, rgba(4,17,31,0.45) 0%, rgba(4,17,31,0.7) 40%, rgba(4,17,31,0.96) 100%)',
+            background: 'linear-gradient(to bottom, rgba(7,18,30,0.25) 0%, rgba(7,18,30,0.65) 35%, rgba(7,18,30,0.92) 60%, rgba(7,18,30,0.99) 100%)',
           }}
         />
       </>
     )}
 
-    {/* Fallback gradient when no image */}
+    {/* Fallback when no image — solid dark + accent tint */}
     {!slide.image && (
       <div
         className="absolute inset-0"
         style={{
           background: isCenter
-            ? `linear-gradient(145deg, ${slide.accent}18, rgba(4,17,31,0.95))`
-            : 'rgba(255,255,255,0.02)',
+            ? `linear-gradient(145deg, ${slide.accent}20 0%, #07121E 50%)`
+            : '#07121E',
         }}
       />
     )}
@@ -200,8 +203,8 @@ export const FeatureCarousel = React.forwardRef<HTMLDivElement, FeatureCarouselP
                     rotateY(${offset * -12}deg)
                   `,
                   zIndex: isCenter ? 10 : isAdjacent ? 5 : 1,
-                  opacity: isCenter ? 1 : isAdjacent ? 0.5 : 0.2,
-                  filter: isCenter ? 'blur(0px)' : isAdjacent ? 'blur(1px)' : 'blur(3px)',
+                  opacity: isCenter ? 1 : isAdjacent ? 0.35 : 0.1,
+                  filter: isCenter ? 'blur(0px)' : isAdjacent ? 'blur(3px)' : 'blur(6px)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   pointerEvents: isCenter ? 'auto' : 'none',
                 }}
