@@ -19,6 +19,7 @@ import { KioskBanner, useKioskMode } from "@/components/landing/kiosk-banner"
 import { PrequalFunnel } from "@/components/landing/prequal-funnel"
 import { PhotoShowcase } from "@/components/landing/photo-showcase"
 import { NameSemantics } from "@/components/landing/name-semantics"
+import { TransformationCarousel } from "@/components/landing/transformation-carousel"
 
 function LandingContent() {
   const isKiosk = useKioskMode()
@@ -39,6 +40,7 @@ function LandingContent() {
       <Problems />
       <Solution />
       <Certificate />
+      <TransformationCarousel onCta={openFunnel} />
       <Parcours onCta={openFunnel} />
       <Pricing onCta={openFunnel} />
       <Market />
