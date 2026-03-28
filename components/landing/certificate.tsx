@@ -52,8 +52,11 @@ export function Certificate() {
             <span style={{ color: "#00A896" }}>En 1 document. 1 QR code.</span>
           </h2>
           <p className="mt-4 text-[16px] text-[#4A5A72] max-w-xl mx-auto">
-            Généré automatiquement après votre diagnostic, partageable instantanément avec n&apos;importe quel donneur d&apos;ordre ou auditeur.
+            Généré pour les transporteurs en accompagnement CaaS. Partageable instantanément avec n&apos;importe quel donneur d&apos;ordre ou auditeur.
           </p>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-orange-300 bg-orange-50 px-4 py-1.5">
+            <span className="text-[12px] font-bold text-orange-600">🏆 Réservé aux clients accompagnement — non inclus dans le diagnostic seul</span>
+          </div>
         </div>
 
         {/* Main layout */}

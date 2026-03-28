@@ -165,6 +165,21 @@ export function Hero({ onCta }: HeroProps) {
               </div>
             </div>
 
+            {/* CaaS badge */}
+            <div
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00A896]/40 bg-[#00A896]/10 px-4 py-1.5"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? "translateY(0)" : "translateY(16px)",
+                transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 0.04s",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00A896]" />
+              <span className="text-[12px] font-bold uppercase tracking-wider text-[#00A896]">
+                Compliance as a Service · Réservé aux transporteurs
+              </span>
+            </div>
+
             {/* H1 */}
             <h1
               className="font-black leading-[1.02] tracking-tight text-white"
@@ -192,7 +207,8 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.16s",
               }}
             >
-              ClearGo transforme vos obligations réglementaires en un{" "}
+              ClearGo est un service de conformité à la demande (CaaS) pour transporteurs routiers.
+              Vos obligations réglementaires deviennent un{" "}
               <span className="font-semibold text-white/80">Trust Score partageable</span>{" "}
               — crédible face à n'importe quel donneur d'ordre.
             </p>
@@ -230,7 +246,7 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.32s",
               }}
             >
-              Gratuit · Sans engagement · Résultat sous 24h
+              Pré-qualification immédiate · Diagnostic disponible à partir de juin · Sans engagement
             </p>
 
             {/* Trust row */}
