@@ -176,44 +176,21 @@ export const FeatureCarousel = React.forwardRef<HTMLDivElement, FeatureCarouselP
           ))}
         </div>
 
-        {/* 3D Carousel */}
-        <div
-          className="relative flex h-[480px] items-center justify-center"
-          style={{ perspective: '1200px' }}
-        >
-          {slides.map((slide, index) => {
-            const total = slides.length;
-            let offset = index - currentIndex;
-            if (offset > Math.floor(total / 2)) offset -= total;
-            if (offset < -Math.floor(total / 2)) offset += total;
-
-            const isCenter = offset === 0;
-            const isAdjacent = Math.abs(offset) === 1;
-            const isVisible = Math.abs(offset) <= 2;
-
-            return (
+        {/* Single card display — fade transition, no bleed-through */}
+        <div className="relative flex justify-center">
+          <div className="w-full max-w-sm md:max-w-md">
+            {slides.map((slide, index) => (
               <div
                 key={index}
-                className="absolute w-[260px] md:w-[300px] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="transition-all duration-500"
                 style={{
-                  height: isCenter ? '440px' : '380px',
-                  transform: `
-                    translateX(${offset * 52}%)
-                    scale(${isCenter ? 1 : isAdjacent ? 0.82 : 0.68})
-                    rotateY(${offset * -12}deg)
-                  `,
-                  zIndex: isCenter ? 10 : isAdjacent ? 5 : 1,
-                  opacity: isCenter ? 1 : isAdjacent ? 0.35 : 0.1,
-                  filter: isCenter ? 'blur(0px)' : isAdjacent ? 'blur(3px)' : 'blur(6px)',
-                  visibility: isVisible ? 'visible' : 'hidden',
-                  pointerEvents: isCenter ? 'auto' : 'none',
+                  display: index === currentIndex ? 'block' : 'none',
                 }}
-                onClick={() => !isCenter && setCurrentIndex(index)}
               >
-                <SlideCard slide={slide} isCenter={isCenter} />
+                <SlideCard slide={slide} isCenter={true} />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
         {/* Nav buttons */}
