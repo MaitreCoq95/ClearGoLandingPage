@@ -2,8 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Politique Cookies - ClearGo",
+  title: "Politique Cookies",
   description: "Politique de gestion des cookies de la plateforme ClearGo Compliance & Transport.",
+  alternates: { canonical: "https://cleargo.fr/politique-cookies" },
+  robots: { index: false, follow: false },
 }
 
 export default function PolitiqueCookies() {

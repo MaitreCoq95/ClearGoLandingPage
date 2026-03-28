@@ -2,8 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Politique de Confidentialite RGPD - ClearGo",
-  description: "Politique de confidentialite et protection des donnees personnelles de ClearGo, conforme au RGPD.",
+  title: "Politique de Confidentialité RGPD",
+  description: "Politique de confidentialité et protection des données personnelles de ClearGo, conforme au RGPD.",
+  alternates: { canonical: "https://cleargo.fr/politique-confidentialite" },
+  robots: { index: false, follow: false },
 }
 
 export default function PolitiqueConfidentialite() {
