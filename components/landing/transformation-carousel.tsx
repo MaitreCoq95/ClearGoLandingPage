@@ -26,6 +26,7 @@ const SLIDES = [
     note: "Gratuit. Sans engagement. Résultat immédiat.",
     accent: "#94A3B8",
     icon: <ClipboardList className="h-6 w-6" style={{ color: "#94A3B8" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-01.jpg",
   },
   {
     step: "02",
@@ -41,6 +42,7 @@ const SLIDES = [
     note: "Diagnostic offert si engagement accompagnement (offre SITL).",
     accent: "#F97316",
     icon: <Stethoscope className="h-6 w-6" style={{ color: "#F97316" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-02.jpg",
   },
   {
     step: "03",
@@ -56,6 +58,7 @@ const SLIDES = [
     note: "Plus vous êtes préparé, plus la session est efficace.",
     accent: "#A78BFA",
     icon: <FolderOpen className="h-6 w-6" style={{ color: "#A78BFA" }} strokeWidth={2.5} />,
+    // image: "/images/steps/step-03.jpg", // à ajouter dès réception de l'image
   },
   {
     step: "04",
@@ -71,6 +74,7 @@ const SLIDES = [
     note: "Inclus dans le diagnostic. Pas de frais cachés.",
     accent: "#00A896",
     icon: <Users className="h-6 w-6" style={{ color: "#00A896" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-04.jpg",
   },
   {
     step: "05",
@@ -84,8 +88,9 @@ const SLIDES = [
       "Plan d'action priorisé et personnalisé",
     ],
     note: "Preuve commerciale utilisable immédiatement sur vos AO.",
-    accent: "#1A4A7A",
+    accent: "#7EB5E0",
     icon: <Award className="h-6 w-6" style={{ color: "#7EB5E0" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-05.jpg",
   },
   {
     step: "06",
@@ -101,6 +106,7 @@ const SLIDES = [
     note: "Compliance as a Service — pas un one-shot.",
     accent: "#00A896",
     icon: <RefreshCw className="h-6 w-6" style={{ color: "#00A896" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-06.jpg",
   },
 ]
 
