@@ -121,6 +121,22 @@ export function Hero({ onCta }: HeroProps) {
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
       style={{ background: "linear-gradient(160deg, #0D2B4E 0%, #081B32 55%, #04111F 100%)" }}
     >
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        style={{ opacity: 0.07, mixBlendMode: "screen" }}
+      >
+        <source
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/VideoHeroLogo720p-NMmzlbyxopYpisSspsgViFCtQMA6sF.mp4"
+          type="video/mp4"
+        />
+      </video>
+
       {/* Subtle mesh gradient */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -191,9 +207,9 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.08s",
               }}
             >
-              Votre camion parle.
+              Vos camions parlent.
               <br />
-              <span style={{ color: "#00A896" }}>Faites-lui</span>
+              <span style={{ color: "#00A896" }}>Faites-leur</span>
               <br />
               dire la vérité.
             </h1>
@@ -207,10 +223,9 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.16s",
               }}
             >
-              ClearGo est un service de conformité à la demande (CaaS) pour transporteurs routiers.
-              Vos obligations réglementaires deviennent un{" "}
+              ClearGo transforme vos obligations réglementaires en un{" "}
               <span className="font-semibold text-white/80">Trust Score partageable</span>{" "}
-              — crédible face à n'importe quel donneur d'ordre.
+              — crédible face à n'importe quel donneur d'ordre, en continu.
             </p>
 
             {/* CTA */}
@@ -235,7 +250,7 @@ export function Hero({ onCta }: HeroProps) {
                 href="#pricing"
                 className="btn-press inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-4 text-[15px] font-semibold text-white/70 hover:border-white/40 hover:text-white"
               >
-                Voir le diagnostic 199€
+                Voir le diagnostic 299 € HT
               </a>
             </div>
 

@@ -108,6 +108,13 @@ export function Footer() {
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <Link
+              href="/mentions-legales"
+              className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
+            >
+              Mentions Légales
+            </Link>
+            <span className="text-white/10">|</span>
+            <Link
               href="/politique-cookies"
               className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
             >

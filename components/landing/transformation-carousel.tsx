@@ -26,13 +26,14 @@ const SLIDES = [
     note: "Gratuit. Sans engagement. Résultat immédiat.",
     accent: "#94A3B8",
     icon: <ClipboardList className="h-6 w-6" style={{ color: "#94A3B8" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-01.jpg",
   },
   {
     step: "02",
-    badge: "199 € SITL",
+    badge: "299 € HT",
     badgeColor: "#F97316",
     title: "Diagnostic complet",
-    description: "Le diagnostic approfondi de votre conformité. Disponible à partir de juin — 299 € en standard.",
+    description: "Le diagnostic approfondi de votre conformité. Disponible à partir de juin — 299 € HT en standard.",
     items: [
       "Audit complet de vos documents et process",
       "Identification de tous vos écarts réglementaires",
@@ -41,6 +42,7 @@ const SLIDES = [
     note: "Diagnostic offert si engagement accompagnement (offre SITL).",
     accent: "#F97316",
     icon: <Stethoscope className="h-6 w-6" style={{ color: "#F97316" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-02.jpg",
   },
   {
     step: "03",
@@ -56,6 +58,7 @@ const SLIDES = [
     note: "Plus vous êtes préparé, plus la session est efficace.",
     accent: "#A78BFA",
     icon: <FolderOpen className="h-6 w-6" style={{ color: "#A78BFA" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-03.jpg",
   },
   {
     step: "04",
@@ -71,6 +74,7 @@ const SLIDES = [
     note: "Inclus dans le diagnostic. Pas de frais cachés.",
     accent: "#00A896",
     icon: <Users className="h-6 w-6" style={{ color: "#00A896" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-04.jpg",
   },
   {
     step: "05",
@@ -84,12 +88,13 @@ const SLIDES = [
       "Plan d'action priorisé et personnalisé",
     ],
     note: "Preuve commerciale utilisable immédiatement sur vos AO.",
-    accent: "#1A4A7A",
+    accent: "#7EB5E0",
     icon: <Award className="h-6 w-6" style={{ color: "#7EB5E0" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-05.jpg",
   },
   {
     step: "06",
-    badge: "99 €/mois",
+    badge: "99 € HT/mois",
     badgeColor: "#00A896",
     title: "Abonnement CaaS",
     description: "La conformité tourne en continu. Alertes, mises à jour, chatbot. Vous roulez, on surveille.",
@@ -101,6 +106,7 @@ const SLIDES = [
     note: "Compliance as a Service — pas un one-shot.",
     accent: "#00A896",
     icon: <RefreshCw className="h-6 w-6" style={{ color: "#00A896" }} strokeWidth={2.5} />,
+    image: "/images/steps/step-06.jpg",
   },
 ]
 

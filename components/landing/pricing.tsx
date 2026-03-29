@@ -51,27 +51,53 @@ export function Pricing({ onCta }: PricingProps) {
           </p>
         </div>
 
+        {/* SITL Promo Banner */}
+        <div
+          className="mb-8 rounded-2xl border-2 border-[#F97316] bg-[#FFF7ED] px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.1s",
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#F97316]/15 text-2xl">🏆</div>
+            <div>
+              <div className="text-[12px] font-black uppercase tracking-wider text-[#F97316]">Offre SITL 2026 — Tarif fondateur</div>
+              <p className="mt-0.5 text-[15px] font-bold text-[#0D2B4E]">
+                Diagnostic complet à <span className="text-[#F97316]">199 € HT</span> au lieu de 299 € HT — engagement accompagnement CaaS requis
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0 text-center">
+            <div className="rounded-xl bg-[#F97316] px-5 py-2 text-[13px] font-black text-white">
+              Offre limitée · SITL
+            </div>
+            <p className="mt-1 text-[11px] text-[#94A3B8]">Valable jusqu'au 30 juin 2026</p>
+          </div>
+        </div>
+
         {/* Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 
           {/* ① Diagnostic */}
           <div
-            className="card-lift relative flex flex-col rounded-3xl border-2 border-orange-400 bg-white p-7"
+            className="card-lift relative flex flex-col rounded-3xl border-2 border-[#00A896] bg-white p-7"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(32px)",
               transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0ms",
             }}
           >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-orange-500 px-4 py-1.5 text-[11px] font-black text-white">
-              Offre SITL
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#00A896] px-4 py-1.5 text-[11px] font-black text-white">
+              Recommandé
             </div>
             <p className="mt-2 text-[11px] font-bold uppercase tracking-widest text-[#94A3B8]">Diagnostic</p>
             <div className="mt-3 flex items-baseline">
-              <span className="text-[52px] font-black leading-none text-[#00A896]" style={{ letterSpacing: "-3px" }}>199</span>
+              <span className="text-[52px] font-black leading-none text-[#00A896]" style={{ letterSpacing: "-3px" }}>299</span>
               <span className="ml-1 text-[20px] font-bold text-[#00A896]">€</span>
             </div>
-            <p className="text-[12px] italic text-[#94A3B8] line-through mt-0.5">299 € standard</p>
+            <p className="text-[12px] italic text-[#94A3B8] mt-0.5">Paiement unique HT — résultat sous 48h</p>
             <ul className="mt-6 flex-1 flex flex-col gap-2.5">
               {[
                 "Pré-qualification gratuite incluse",
@@ -109,9 +135,9 @@ export function Pricing({ onCta }: PricingProps) {
             <div className="mt-3 flex items-baseline">
               <span className="text-[42px] font-black leading-none text-[#0D2B4E]" style={{ letterSpacing: "-2px" }}>99</span>
               <span className="ml-1 text-[16px] font-bold text-[#0D2B4E]">€</span>
-              <span className="ml-1 text-[13px] text-[#94A3B8]">/mois</span>
+              <span className="ml-1 text-[13px] text-[#94A3B8]">HT/mois</span>
             </div>
-            <p className="text-[12px] italic text-[#94A3B8] mt-0.5">Compliance as a Service · À partir de</p>
+            <p className="text-[12px] italic text-[#94A3B8] mt-0.5">Compliance as a Service · À partir de · HT</p>
             <ul className="mt-6 flex-1 flex flex-col gap-2.5">
               {["Score RÉGLO en continu", "Chatbot compliance intégré", "Accès templates & outils de base"].map((f) => (
                 <li key={f} className="flex items-start gap-2.5 text-[13px] text-[#4A5A72]">

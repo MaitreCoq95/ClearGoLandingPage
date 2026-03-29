@@ -16,6 +16,7 @@ export interface CarouselSlide {
   note: string;
   accent: string;
   icon: React.ReactNode;
+  image?: string; // optional background image path
 }
 
 interface FeatureCarouselProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
@@ -27,60 +28,90 @@ interface FeatureCarouselProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 // --- SLIDE CARD ---
 const SlideCard = ({ slide, isCenter }: { slide: CarouselSlide; isCenter: boolean }) => (
   <div
-    className="flex h-full w-full flex-col rounded-3xl border border-white/10 p-7"
+    className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/10"
     style={{
-      background: isCenter
-        ? 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))'
-        : 'rgba(255,255,255,0.02)',
-      boxShadow: isCenter ? '0 32px 64px -16px rgba(0,0,0,0.5)' : 'none',
+      background: '#07121E',
+      boxShadow: isCenter ? '0 32px 64px -16px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)' : 'none',
     }}
   >
-    {/* Step number + badge */}
-    <div className="mb-4 flex items-center justify-between">
-      <span className="text-[11px] font-black tracking-[0.25em] text-white/20">{slide.step}</span>
-      <span
-        className="rounded-full px-3 py-1 text-[11px] font-black"
-        style={{ background: `${slide.accent}22`, color: slide.accent, border: `1px solid ${slide.accent}44` }}
+    {/* Background image */}
+    {slide.image && (
+      <>
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700"
+          style={{ backgroundImage: `url(${slide.image})`, transform: isCenter ? 'scale(1.04)' : 'scale(1)' }}
+        />
+        {/* Strong overlay — image visible top, solid dark bottom for text */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(7,18,30,0.25) 0%, rgba(7,18,30,0.65) 35%, rgba(7,18,30,0.92) 60%, rgba(7,18,30,0.99) 100%)',
+          }}
+        />
+      </>
+    )}
+
+    {/* Fallback when no image — solid dark + accent tint */}
+    {!slide.image && (
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isCenter
+            ? `linear-gradient(145deg, ${slide.accent}20 0%, #07121E 50%)`
+            : '#07121E',
+        }}
+      />
+    )}
+
+    {/* Content */}
+    <div className="relative flex h-full flex-col p-7">
+      {/* Step number + badge */}
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-[11px] font-black tracking-[0.25em] text-white/30">{slide.step}</span>
+        <span
+          className="rounded-full px-3 py-1 text-[11px] font-black backdrop-blur-sm"
+          style={{ background: `${slide.accent}33`, color: slide.accent, border: `1px solid ${slide.accent}55` }}
+        >
+          {slide.badge}
+        </span>
+      </div>
+
+      {/* Icon */}
+      <div
+        className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl backdrop-blur-sm"
+        style={{ background: `${slide.accent}25` }}
       >
-        {slide.badge}
-      </span>
-    </div>
+        {slide.icon}
+      </div>
 
-    {/* Icon */}
-    <div
-      className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
-      style={{ background: `${slide.accent}1A` }}
-    >
-      {slide.icon}
-    </div>
+      {/* Title */}
+      <h3 className="mb-2 text-[18px] font-black leading-tight text-white" style={{ letterSpacing: '-0.5px' }}>
+        {slide.title}
+      </h3>
 
-    {/* Title */}
-    <h3 className="mb-2 text-[18px] font-black leading-tight text-white" style={{ letterSpacing: '-0.5px' }}>
-      {slide.title}
-    </h3>
+      {/* Description */}
+      <p className="mb-4 text-[13px] leading-relaxed text-white/60">{slide.description}</p>
 
-    {/* Description */}
-    <p className="mb-4 text-[13px] leading-relaxed text-white/50">{slide.description}</p>
+      {/* Items */}
+      <ul className="flex flex-1 flex-col gap-2">
+        {slide.items.map((item) => (
+          <li key={item} className="flex items-start gap-2.5 text-[12px] text-white/70">
+            <span
+              className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
+              style={{ background: slide.accent }}
+            />
+            {item}
+          </li>
+        ))}
+      </ul>
 
-    {/* Items */}
-    <ul className="flex flex-1 flex-col gap-2">
-      {slide.items.map((item) => (
-        <li key={item} className="flex items-start gap-2.5 text-[12px] text-white/60">
-          <span
-            className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
-            style={{ background: slide.accent }}
-          />
-          {item}
-        </li>
-      ))}
-    </ul>
-
-    {/* Note */}
-    <div
-      className="mt-5 rounded-xl px-3 py-2.5 text-[11px] font-semibold leading-relaxed"
-      style={{ background: `${slide.accent}15`, color: slide.accent }}
-    >
-      → {slide.note}
+      {/* Note */}
+      <div
+        className="mt-5 rounded-xl px-3 py-2.5 text-[11px] font-semibold leading-relaxed backdrop-blur-sm"
+        style={{ background: `${slide.accent}22`, color: slide.accent, border: `1px solid ${slide.accent}33` }}
+      >
+        → {slide.note}
+      </div>
     </div>
   </div>
 );
@@ -145,44 +176,21 @@ export const FeatureCarousel = React.forwardRef<HTMLDivElement, FeatureCarouselP
           ))}
         </div>
 
-        {/* 3D Carousel */}
-        <div
-          className="relative flex h-[480px] items-center justify-center"
-          style={{ perspective: '1200px' }}
-        >
-          {slides.map((slide, index) => {
-            const total = slides.length;
-            let offset = index - currentIndex;
-            if (offset > Math.floor(total / 2)) offset -= total;
-            if (offset < -Math.floor(total / 2)) offset += total;
-
-            const isCenter = offset === 0;
-            const isAdjacent = Math.abs(offset) === 1;
-            const isVisible = Math.abs(offset) <= 2;
-
-            return (
+        {/* Single card display — fade transition, no bleed-through */}
+        <div className="relative flex justify-center">
+          <div className="w-full max-w-sm md:max-w-md">
+            {slides.map((slide, index) => (
               <div
                 key={index}
-                className="absolute w-[260px] md:w-[300px] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="transition-all duration-500"
                 style={{
-                  height: isCenter ? '440px' : '380px',
-                  transform: `
-                    translateX(${offset * 52}%)
-                    scale(${isCenter ? 1 : isAdjacent ? 0.82 : 0.68})
-                    rotateY(${offset * -12}deg)
-                  `,
-                  zIndex: isCenter ? 10 : isAdjacent ? 5 : 1,
-                  opacity: isCenter ? 1 : isAdjacent ? 0.5 : 0.2,
-                  filter: isCenter ? 'blur(0px)' : isAdjacent ? 'blur(1px)' : 'blur(3px)',
-                  visibility: isVisible ? 'visible' : 'hidden',
-                  pointerEvents: isCenter ? 'auto' : 'none',
+                  display: index === currentIndex ? 'block' : 'none',
                 }}
-                onClick={() => !isCenter && setCurrentIndex(index)}
               >
-                <SlideCard slide={slide} isCenter={isCenter} />
+                <SlideCard slide={slide} isCenter={true} />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
         {/* Nav buttons */}

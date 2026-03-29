@@ -65,9 +65,9 @@ export function Team() {
           }`}
         >
           <h2 className="font-black text-4xl leading-tight tracking-tight text-[#0D2B4E] lg:text-5xl">
-            Little Flock — ClearGo est notre premier standard.
+            L'équipe derrière ClearGo
           </h2>
-          <p className="mt-3 text-xl italic text-[#00A896]">D&apos;autres suivront.</p>
+          <p className="mt-3 text-xl italic text-[#00A896]">15 ans terrain. Fondée par des professionnels du transport.</p>
         </div>
 
         {/* 2-col layout */}
@@ -80,7 +80,11 @@ export function Team() {
           {/* LEFT — Little Flock */}
           <div>
             <div className="mb-5">
-              <p className="text-[15px] font-semibold text-[#0D2B4E] mb-1">Studio de produits SaaS compliance & transport</p>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#00A896]/30 bg-[#00A896]/8 px-3 py-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">Little Flock</span>
+              </div>
+              <p className="text-[15px] font-bold text-[#0D2B4E] mb-1">Studio parisien de produits SaaS dédiés au transport & à la conformité</p>
+              <p className="text-[13px] text-[#4A5A72] mb-3">ClearGo est le premier produit du studio. D'autres suivront pour d'autres verticales transport.</p>
               <ul className="space-y-2">
                 {[
                   "50+ projets terrain communs — Eurotranspharma, leader EU transport pharmaceutique",

@@ -128,7 +128,7 @@ export function Solution() {
             Un score de confiance en sort.
           </h2>
           <p className="mt-4 text-[17px] text-[#4A5A72]">
-            Un seul chiffre. Lisible par n'importe quel donneur d'ordre, auditeur ou inspecteur. Conçu pour les transporteurs routiers.
+            Un seul chiffre. Lisible par n'importe quel donneur d'ordre, auditeur ou inspecteur DRIEAT. Conçu pour les transporteurs routiers.
           </p>
         </div>
 
