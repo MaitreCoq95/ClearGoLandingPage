@@ -30,10 +30,10 @@ const SLIDES = [
   },
   {
     step: "02",
-    badge: "199 € SITL",
+    badge: "299 € HT",
     badgeColor: "#F97316",
     title: "Diagnostic complet",
-    description: "Le diagnostic approfondi de votre conformité. Disponible à partir de juin — 299 € en standard.",
+    description: "Le diagnostic approfondi de votre conformité. Disponible à partir de juin — 299 € HT en standard.",
     items: [
       "Audit complet de vos documents et process",
       "Identification de tous vos écarts réglementaires",
@@ -94,7 +94,7 @@ const SLIDES = [
   },
   {
     step: "06",
-    badge: "99 €/mois",
+    badge: "99 € HT/mois",
     badgeColor: "#00A896",
     title: "Abonnement CaaS",
     description: "La conformité tourne en continu. Alertes, mises à jour, chatbot. Vous roulez, on surveille.",

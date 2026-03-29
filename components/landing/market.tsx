@@ -75,9 +75,9 @@ export function Market() {
             }`}
             style={{ transitionDelay: "240ms" }}
           >
-            <StatRowWhite value="199€" label="Diagnostic d'entrée" />
+            <StatRowWhite value="299€ HT" label="Diagnostic d'entrée" />
             <div className="h-px bg-white/20" />
-            <StatRowWhite value="99€/mois" label="Abonnement SaaS" />
+            <StatRowWhite value="99€ HT/mois" label="Abonnement CaaS" />
             <div className="h-px bg-white/20" />
             <StatRowWhite value="~200K€" label="MRR cible 2 000 clients 2026/2027" />
           </div>

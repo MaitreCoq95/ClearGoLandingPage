@@ -1049,7 +1049,7 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 </p>
                 {[
                   "Résultat de pré-qualification sous 24h",
-                  "Accès au diagnostic complet à 199€ (offre SITL)",
+                  "Accès au diagnostic complet à 299€",
                   "Trust Score 0-1000 + plan d'action personnalisé",
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3 border-b border-[#E2E8F0] py-2 last:border-0">

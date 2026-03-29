@@ -235,7 +235,7 @@ export function Hero({ onCta }: HeroProps) {
                 href="#pricing"
                 className="btn-press inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-6 py-4 text-[15px] font-semibold text-white/70 hover:border-white/40 hover:text-white"
               >
-                Voir le diagnostic 199€
+                Voir le diagnostic 299 € HT
               </a>
             </div>
 

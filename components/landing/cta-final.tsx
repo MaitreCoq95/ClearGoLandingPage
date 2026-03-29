@@ -69,7 +69,7 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
             Transporteurs : démarrez maintenant
           </h3>
           <p className="text-[14px] text-[#4A5A72] mb-6">
-            Pré-qualification gratuite · Diagnostic à partir de juin (199 €) · Abonnement CaaS 99 €/mois
+            Pré-qualification gratuite · Diagnostic 299 € HT · Abonnement CaaS 99 € HT/mois
           </p>
 
           <button

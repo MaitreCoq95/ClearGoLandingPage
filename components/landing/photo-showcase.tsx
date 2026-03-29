@@ -172,7 +172,7 @@ export function PhotoShowcase({ onCta }: PhotoShowcaseProps) {
           >
             Je suis transporteur — pré-qualification gratuite →
           </button>
-          <p className="mt-3 text-[13px] text-[#94A3B8]">Diagnostic disponible à partir de juin · 199 € SITL</p>
+          <p className="mt-3 text-[13px] text-[#94A3B8]">Diagnostic disponible à partir de juin · 299 €</p>
         </div>
       </div>
     </section>
