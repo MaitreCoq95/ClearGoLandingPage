@@ -172,7 +172,7 @@ const WordVisual = ({ data, isClear }: { data: SideData; isClear: boolean }) => 
 
     {/* Circle */}
     <div
-      className="relative flex h-72 w-72 items-center justify-center rounded-full border border-white/8 shadow-2xl backdrop-blur-sm md:h-[400px] md:w-[400px]"
+      className="relative flex h-56 w-56 items-center justify-center rounded-full border border-white/8 shadow-2xl backdrop-blur-sm md:h-[280px] md:w-[280px]"
       style={{ background: 'rgba(0,0,0,0.25)' }}
     >
       <AnimatePresence mode="wait">
@@ -187,8 +187,8 @@ const WordVisual = ({ data, isClear }: { data: SideData; isClear: boolean }) => 
           <span
             className="font-black leading-none tracking-tighter text-white"
             style={{
-              fontSize: 'clamp(72px, 12vw, 130px)',
-              letterSpacing: '-6px',
+              fontSize: 'clamp(52px, 8vw, 90px)',
+              letterSpacing: '-4px',
               textShadow: `0 0 60px rgba(${data.colors.glowRgb},0.6)`,
             }}
           >
@@ -235,7 +235,7 @@ const SideDetails = ({ data, isClear }: { data: SideData; isClear: boolean }) =>
       <motion.h2
         variants={ANIMATIONS.item}
         className="mb-3 font-black leading-tight tracking-tight text-white"
-        style={{ fontSize: 'clamp(26px, 4vw, 44px)', letterSpacing: '-2px' }}
+        style={{ fontSize: 'clamp(22px, 3vw, 34px)', letterSpacing: '-1.5px' }}
       >
         {data.title}
       </motion.h2>
@@ -338,11 +338,11 @@ export default function ClearGoSemantics() {
   const data = SIDE_DATA[active];
 
   return (
-    <div className="relative w-full overflow-hidden rounded-3xl bg-[#04111F] py-16 px-6 lg:px-12">
+    <div className="relative w-full overflow-hidden rounded-3xl bg-[#04111F] py-10 px-6 lg:px-12">
       <BackgroundGlow isClear={isClear} />
 
       {/* Header */}
-      <div className="relative z-10 mb-12 text-center">
+      <div className="relative z-10 mb-8 text-center">
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-500">
           La sémantique du nom
         </p>
@@ -364,7 +364,7 @@ export default function ClearGoSemantics() {
         <motion.div
           layout
           transition={{ type: 'spring', bounce: 0, duration: 0.85 }}
-          className={`flex flex-col items-center gap-10 md:flex-row md:justify-center md:gap-16 lg:gap-28 ${
+          className={`flex flex-col items-center gap-8 md:flex-row md:justify-center md:gap-10 lg:gap-16 ${
             isClear ? 'md:flex-row' : 'md:flex-row-reverse'
           }`}
         >
