@@ -117,9 +117,9 @@ export function CtaFinal({ onCta }: CtaFinalProps) {
             className="font-black text-white"
             style={{ fontSize: "clamp(36px, 5.5vw, 72px)", letterSpacing: "-3px", lineHeight: 1.02 }}
           >
-            Votre camion parle.
+            Vos camions parlent.
             <br />
-            <span style={{ color: "#00A896" }}>Faites-lui dire</span>
+            <span style={{ color: "#00A896" }}>Faites-leur dire</span>
             <br />
             la vérité.
           </h2>

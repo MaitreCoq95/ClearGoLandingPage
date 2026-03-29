@@ -207,9 +207,9 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.08s",
               }}
             >
-              Votre camion parle.
+              Vos camions parlent.
               <br />
-              <span style={{ color: "#00A896" }}>Faites-lui</span>
+              <span style={{ color: "#00A896" }}>Faites-leur</span>
               <br />
               dire la vérité.
             </h1>
