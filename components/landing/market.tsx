@@ -26,6 +26,25 @@ export function Market() {
     <section id="market" className="bg-[#F0F4F8] py-24" ref={ref}>
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
 
+        {/* Stats ticker */}
+        <div
+          className={`mb-10 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 transition-all duration-700 ${
+            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
+          {[
+            { icon: "⭐", text: "4,9 / 5 bêta-testeurs" },
+            { icon: "🚛", text: "40 000+ PME transport en France" },
+            { icon: "✅", text: "87 points DRIEAT couverts nativement" },
+            { icon: "🔒", text: "Données hébergées en France" },
+          ].map((item) => (
+            <div key={item.text} className="flex items-center gap-2 text-[13px] font-semibold text-[#4A5A72]">
+              <span>{item.icon}</span>
+              <span>{item.text}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Header */}
         <div
           className={`text-center transition-all duration-700 ${

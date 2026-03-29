@@ -3,12 +3,11 @@
 import { Suspense, useState } from "react"
 import { Navbar } from "@/components/landing/navbar"
 import { Hero } from "@/components/landing/hero"
-import { VideoShowcase } from "@/components/landing/video-showcase"
-import { SocialProof } from "@/components/landing/social-proof"
 import { Problems } from "@/components/landing/problems"
 import { Solution } from "@/components/landing/solution"
 import { Parcours } from "@/components/landing/parcours"
 import { Pricing } from "@/components/landing/pricing"
+import { AbonnementSection } from "@/components/landing/abonnement-section"
 import { Market } from "@/components/landing/market"
 import { Certificate } from "@/components/landing/certificate"
 import { Team } from "@/components/landing/team"
@@ -17,7 +16,6 @@ import { Footer } from "@/components/landing/footer"
 import { StickyMobileCta } from "@/components/landing/sticky-mobile-cta"
 import { KioskBanner, useKioskMode } from "@/components/landing/kiosk-banner"
 import { PrequalFunnel } from "@/components/landing/prequal-funnel"
-import { PhotoShowcase } from "@/components/landing/photo-showcase"
 import { NameSemantics } from "@/components/landing/name-semantics"
 import { TransformationCarousel } from "@/components/landing/transformation-carousel"
 
@@ -33,16 +31,14 @@ function LandingContent() {
       {!isKiosk && <Navbar onCta={openFunnel} />}
 
       <Hero onCta={openFunnel} />
-      <VideoShowcase />
       <NameSemantics />
-      <PhotoShowcase onCta={openFunnel} />
-      <SocialProof />
       <Problems />
       <Solution />
       <Certificate />
       <TransformationCarousel onCta={openFunnel} />
       <Parcours onCta={openFunnel} />
       <Pricing onCta={openFunnel} />
+      <AbonnementSection />
       <Market />
       <Team />
       <CtaFinal onCta={openFunnel} />

@@ -121,6 +121,22 @@ export function Hero({ onCta }: HeroProps) {
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
       style={{ background: "linear-gradient(160deg, #0D2B4E 0%, #081B32 55%, #04111F 100%)" }}
     >
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        style={{ opacity: 0.07, mixBlendMode: "screen" }}
+      >
+        <source
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/VideoHeroLogo720p-NMmzlbyxopYpisSspsgViFCtQMA6sF.mp4"
+          type="video/mp4"
+        />
+      </video>
+
       {/* Subtle mesh gradient */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -207,10 +223,9 @@ export function Hero({ onCta }: HeroProps) {
                 transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.16s",
               }}
             >
-              ClearGo est un service de conformité à la demande (CaaS) pour transporteurs routiers.
-              Vos obligations réglementaires deviennent un{" "}
+              ClearGo transforme vos obligations réglementaires en un{" "}
               <span className="font-semibold text-white/80">Trust Score partageable</span>{" "}
-              — crédible face à n'importe quel donneur d'ordre.
+              — crédible face à n'importe quel donneur d'ordre, en continu.
             </p>
 
             {/* CTA */}

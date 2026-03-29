@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Image from "next/image"
 
 function useReveal(threshold = 0.08) {
   const ref = useRef<HTMLDivElement>(null)
@@ -49,16 +48,16 @@ export function PhotoShowcase({ onCta }: PhotoShowcaseProps) {
             className="mt-3 font-black text-[#0D2B4E]"
             style={{ fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: "-2px", lineHeight: 1.08 }}
           >
-            La conformité, gérée pour vous.
+            Vos obligations réglementaires,
             <br />
-            <span style={{ color: "#00A896" }}>En continu. Pour les transporteurs.</span>
+            <span style={{ color: "#00A896" }}>pilotées en continu.</span>
           </h2>
         </div>
 
         {/* Two-column photo grid */}
         <div className="grid gap-6 lg:grid-cols-2">
 
-          {/* Photo 1 — Dashboard compliance */}
+          {/* Card 1 — Dashboard compliance */}
           <div
             className="relative overflow-hidden rounded-3xl"
             style={{
@@ -67,35 +66,58 @@ export function PhotoShowcase({ onCta }: PhotoShowcaseProps) {
               transition: "all 0.9s cubic-bezier(0.25,0.1,0.25,1) 0.1s",
             }}
           >
-            <div className="relative aspect-[4/3]">
-              <Image
-                src="/images/hero-dashboard.jpg"
-                alt="Dashboard ClearGo — Score de conformité temps réel"
-                fill
-                className="object-cover"
-              />
-              {/* Overlay gradient */}
+            <div
+              className="relative flex flex-col justify-between p-8"
+              style={{
+                aspectRatio: "4/3",
+                background: "linear-gradient(135deg, #0D2B4E 0%, #0A3D62 60%, #0D4F52 100%)",
+              }}
+            >
+              {/* Dot grid texture */}
               <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(to top, rgba(13,43,78,0.85) 0%, rgba(13,43,78,0.2) 50%, transparent 100%)" }}
+                className="pointer-events-none absolute inset-0 opacity-[0.06]"
+                style={{
+                  backgroundImage: "radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)",
+                  backgroundSize: "20px 20px",
+                }}
               />
-              {/* Caption */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
+              {/* Mock score ring */}
+              <div className="relative z-10 flex items-start justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">Trust Score</p>
+                  <p className="text-[64px] font-black leading-none text-white" style={{ letterSpacing: "-3px" }}>820</p>
+                  <p className="text-[13px] text-white/50">/ 1000 pts</p>
+                </div>
+                <div className="rounded-2xl bg-[#00A896]/20 border border-[#00A896]/40 px-4 py-2">
+                  <p className="text-[11px] font-bold text-[#00A896]">NIVEAU OR</p>
+                </div>
+              </div>
+              <div className="relative z-10 mt-auto">
+                <div className="mb-3 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-white/8 border border-white/10 px-3 py-2">
+                    <p className="text-[10px] text-white/40 mb-0.5">RÉGLO</p>
+                    <p className="text-[18px] font-black text-white">418<span className="text-[12px] font-normal text-white/40">/500</span></p>
+                  </div>
+                  <div className="rounded-xl bg-[#00A896]/15 border border-[#00A896]/30 px-3 py-2">
+                    <p className="text-[10px] text-[#00A896]/70 mb-0.5">EXCELLENCE</p>
+                    <p className="text-[18px] font-black text-[#00A896]">402<span className="text-[12px] font-normal text-[#00A896]/50">/500</span></p>
+                  </div>
+                </div>
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#00A896] px-3 py-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-white" style={{ animation: "pulse-dot 2s infinite" }} />
                   <span className="text-[11px] font-bold text-white">Score en direct</span>
                 </div>
                 <h3 className="text-[18px] font-black text-white leading-tight">
-                  Votre tableau de bord compliance
+                  Votre tableau de bord tout-en-un
                 </h3>
-                <p className="mt-1 text-[13px] text-white/70">
-                  Score global · Formation · Risques · Documents — tout en un coup d'œil
+                <p className="mt-1 text-[13px] text-white/60">
+                  Score global · Formation · Risques · Documents
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Photo 2 — Woman at trucking office */}
+          {/* Card 2 — Transporteur sur route */}
           <div
             className="relative overflow-hidden rounded-3xl"
             style={{
@@ -104,29 +126,46 @@ export function PhotoShowcase({ onCta }: PhotoShowcaseProps) {
               transition: "all 0.9s cubic-bezier(0.25,0.1,0.25,1) 0.22s",
             }}
           >
-            <div className="relative aspect-[4/3]">
-              <Image
-                src="/images/transport-fleet.jpg"
-                alt="Responsable conformité transporteur — ClearGo"
-                fill
-                className="object-cover"
-              />
-              {/* Overlay gradient */}
+            <div
+              className="relative flex flex-col justify-between p-8"
+              style={{
+                aspectRatio: "4/3",
+                background: "linear-gradient(135deg, #04111F 0%, #062038 50%, #00524A 100%)",
+              }}
+            >
               <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(to top, rgba(13,43,78,0.85) 0%, rgba(13,43,78,0.2) 50%, transparent 100%)" }}
+                className="pointer-events-none absolute inset-0 opacity-[0.05]"
+                style={{
+                  backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+                  backgroundSize: "32px 32px",
+                }}
               />
-              {/* Caption */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3 py-1 backdrop-blur-sm">
-                  <span className="text-[11px] font-bold text-white">✅ Compliance Certified</span>
+              <div className="relative z-10 flex items-start justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">Statut véhicule</p>
+                  <p className="mt-1 text-[22px] font-black text-white leading-tight">En route.</p>
+                  <p className="text-[14px] text-[#00A896]">Zéro anomalie détectée</p>
                 </div>
-                <h3 className="text-[18px] font-black text-white leading-tight">
-                  Certifié, sans effort supplémentaire
-                </h3>
-                <p className="mt-1 text-[13px] text-white/70">
-                  Votre responsable conformité pilote tout depuis ClearGo
-                </p>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00A896]/20 border border-[#00A896]/40 text-3xl">
+                  🚛
+                </div>
+              </div>
+              <div className="relative z-10 mt-auto">
+                <div className="mb-4 flex flex-col gap-2">
+                  {[
+                    { label: "Licence transport", status: "✅ Valide" },
+                    { label: "Contrôle technique", status: "✅ À jour" },
+                    { label: "FCO conducteurs", status: "✅ Certifiés" },
+                  ].map(({ label, status }) => (
+                    <div key={label} className="flex items-center justify-between rounded-xl bg-white/6 border border-white/10 px-4 py-2.5">
+                      <span className="text-[13px] text-white/70">{label}</span>
+                      <span className="text-[12px] font-bold text-[#00A896]">{status}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-sm">
+                  <span className="text-[11px] font-bold text-white">✅ Certifié — Partageable en 1 clic</span>
+                </div>
               </div>
             </div>
           </div>
