@@ -26,10 +26,10 @@ export function useKioskMode() {
 
 export function KioskBanner() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-center gap-6 bg-[var(--navy-dark)] px-6 py-6 text-center">
+    <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-center gap-6 px-6 py-6 text-center" style={{ background: "#1C2B35" }}>
       <div>
-        <div className="font-sans text-xs font-bold uppercase tracking-widest text-[#7FE8A0]">SITL 2026</div>
-        <div className="mt-1 font-sans text-xl font-black text-white">SCANNEZ POUR REJOINDRE LA BETA</div>
+        <div className="font-sans text-xs font-bold uppercase tracking-widest" style={{ color: "#6AABB8" }}>ClearGo</div>
+        <div className="mt-1 font-sans text-xl font-black text-white">SCANNEZ POUR IDENTIFIER VOTRE ENTREPRISE</div>
       </div>
       <a
         href="#contact"

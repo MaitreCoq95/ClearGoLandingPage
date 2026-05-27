@@ -23,14 +23,17 @@ export function Market() {
   }, [])
 
   return (
-    <section id="market" className="bg-[#F0F4F8] py-24" ref={ref}>
+    <section id="market" className="py-24" ref={ref} style={{ background: "#EEF2F4" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
 
         {/* Stats ticker */}
         <div
-          className={`mb-10 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
+          className="mb-10 flex flex-wrap items-center justify-center gap-x-10 gap-y-3"
+          style={{
+            opacity:   visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(16px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1)",
+          }}
         >
           {[
             { icon: "⭐", text: "4,9 / 5 bêta-testeurs" },
@@ -38,7 +41,7 @@ export function Market() {
             { icon: "✅", text: "87 points DRIEAT couverts nativement" },
             { icon: "🔒", text: "Données hébergées en France" },
           ].map((item) => (
-            <div key={item.text} className="flex items-center gap-2 text-[13px] font-semibold text-[#4A5A72]">
+            <div key={item.text} className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "#5E7485" }}>
               <span>{item.icon}</span>
               <span>{item.text}</span>
             </div>
@@ -47,74 +50,94 @@ export function Market() {
 
         {/* Header */}
         <div
-          className={`text-center transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
+          className="text-center"
+          style={{
+            opacity:   visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 80ms",
+          }}
         >
-          <h2 className="font-black text-4xl leading-tight tracking-tight text-[#0D2B4E] lg:text-5xl">
-            Un marché de €2,1 Mrd — 83% non adressé.
+          <div className="section-eyebrow mb-4" style={{ justifyContent: "center" }}>Le marché</div>
+          <h2
+            className="font-black"
+            style={{ fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: "-1.8px", lineHeight: 1.06, color: "#1C2B35" }}
+          >
+            Un marché de €2,1 Mrd —{" "}
+            <span style={{ color: "#4A7B8C" }}>83% non adressé.</span>
           </h2>
         </div>
 
         {/* 3 stat cards */}
         <div className="mt-14 grid gap-5 md:grid-cols-3">
 
-          {/* Card 1 — Navy */}
+          {/* Card 1 — Dark navy */}
           <div
-            className={`rounded-2xl bg-[#0D2B4E] p-8 flex flex-col gap-4 transition-all duration-700 ${
-              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-            style={{ transitionDelay: "0ms" }}
+            className="rounded-2xl p-8 flex flex-col gap-4"
+            style={{
+              background: "#1C2B35",
+              opacity:    visible ? 1 : 0,
+              transform:  visible ? "translateY(0)" : "translateY(32px)",
+              transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 0ms",
+            }}
           >
             <StatRow value="40 000+" label="PME transport routier en France" teal />
-            <div className="h-px bg-white/10" />
+            <div className="h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
             <StatRow value="83%" label="sans aucun outil de conformité" teal />
-            <div className="h-px bg-white/10" />
+            <div className="h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
             <StatRow value="10/jour" label="disparaissent faute de crédibilité" teal />
           </div>
 
           {/* Card 2 — White */}
           <div
-            className={`rounded-2xl border-2 border-[#00A896] bg-white p-8 flex flex-col gap-4 transition-all duration-700 ${
-              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-            style={{ transitionDelay: "120ms" }}
+            className="rounded-2xl border-2 bg-white p-8 flex flex-col gap-4"
+            style={{
+              borderColor: "#4A7B8C",
+              opacity:     visible ? 1 : 0,
+              transform:   visible ? "translateY(0)" : "translateY(32px)",
+              transition:  "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 120ms",
+            }}
           >
             <StatRow value="€2,1 Mrd" label="Marché conformité transport EU" dark />
-            <div className="h-px bg-[#DDE4F0]" />
+            <div className="h-px" style={{ background: "#D5DFE5" }} />
             <StatRow value="€420 M" label="Segment France adressable 2026" dark />
-            <div className="h-px bg-[#DDE4F0]" />
+            <div className="h-px" style={{ background: "#D5DFE5" }} />
             <StatRow value="€0" label="Aucun scoring transporteur n'existe aujourd'hui" teal />
           </div>
 
-          {/* Card 3 — Teal */}
+          {/* Card 3 — Innovation / opportunity (replaces pricing card) */}
           <div
-            className={`rounded-2xl bg-[#00A896] p-8 flex flex-col gap-4 transition-all duration-700 ${
-              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-            style={{ transitionDelay: "240ms" }}
+            className="rounded-2xl p-8 flex flex-col gap-4"
+            style={{
+              background: "#4A7B8C",
+              opacity:    visible ? 1 : 0,
+              transform:  visible ? "translateY(0)" : "translateY(32px)",
+              transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 240ms",
+            }}
           >
-            <StatRowWhite value="299€ HT" label="Diagnostic d'entrée" />
-            <div className="h-px bg-white/20" />
-            <StatRowWhite value="99€ HT/mois" label="Abonnement CaaS" />
-            <div className="h-px bg-white/20" />
-            <StatRowWhite value="~200K€" label="MRR cible 2 000 clients 2026/2027" />
+            <StatRowWhite value="1er" label="Outil de scoring transporteur en France" />
+            <div className="h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+            <StatRowWhite value="< 8 min" label="De l'identification SIRET au premier résultat" />
+            <div className="h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+            <StatRowWhite value="100%" label="Des obligations réglementaires couvertes nativement" />
           </div>
         </div>
 
         {/* TAM/SAM/SOM footer */}
         <div
-          className={`mt-10 rounded-2xl bg-[#0D2B4E] px-8 py-4 text-center transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
-          style={{ transitionDelay: "380ms" }}
+          className="mt-10 rounded-2xl px-8 py-4 text-center"
+          style={{
+            background: "#1C2B35",
+            opacity:    visible ? 1 : 0,
+            transform:  visible ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 380ms",
+          }}
         >
           <p className="text-[14px] font-semibold text-white/70">
             <span className="text-white font-bold">TAM</span> — €2,1 Mrd EU
             {" · "}
             <span className="text-white font-bold">SAM</span> — €420 M France
             {" · "}
-            <span className="text-white font-bold">SOM 2026</span> — 2 000 PME = 200 000€ MRR
+            <span className="text-white font-bold">Opportunité</span> — Premier acteur à structurer ce marché
           </p>
         </div>
       </div>
@@ -136,13 +159,15 @@ function StatRow({
   return (
     <div>
       <div
-        className={`text-4xl font-black leading-none tracking-tight ${
-          teal ? "text-[#00A896]" : dark ? "text-[#0D2B4E]" : "text-white"
-        }`}
+        className="text-4xl font-black leading-none tracking-tight"
+        style={{
+          color: teal ? "#4A7B8C" : dark ? "#1C2B35" : "white",
+          letterSpacing: "-2px",
+        }}
       >
         {value}
       </div>
-      <p className={`mt-1 text-[13px] ${dark ? "text-[#4A5A72]" : "text-white/55"}`}>{label}</p>
+      <p className="mt-1 text-[13px]" style={{ color: dark ? "#5E7485" : "rgba(255,255,255,0.55)" }}>{label}</p>
     </div>
   )
 }
@@ -150,7 +175,7 @@ function StatRow({
 function StatRowWhite({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <div className="text-4xl font-black leading-none tracking-tight text-white">{value}</div>
+      <div className="text-4xl font-black leading-none tracking-tight text-white" style={{ letterSpacing: "-2px" }}>{value}</div>
       <p className="mt-1 text-[13px] text-white/70">{label}</p>
     </div>
   )

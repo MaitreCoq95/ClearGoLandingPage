@@ -25,8 +25,7 @@ function AnimatedNumber({ value, suffix = "", delay = 0, visible }: {
   useEffect(() => {
     if (!visible) return
     let start = 0
-    const duration = 1600
-    const step = value / (duration / 16)
+    const step = value / (1600 / 16)
     const t = setTimeout(() => {
       const interval = setInterval(() => {
         start = Math.min(start + step, value)
@@ -41,119 +40,116 @@ function AnimatedNumber({ value, suffix = "", delay = 0, visible }: {
 }
 
 const STATS = [
-  {
-    number: 83,
-    suffix: "%",
-    label: "des PME transport sans aucun outil pour prouver leur fiabilité",
-    color: "#00A896",
-    delay: 0,
-  },
-  {
-    number: 10,
-    suffix: "/jour",
-    label: "transporteurs qui disparaissent en France faute de crédibilité",
-    color: "#1A4A7A",
-    delay: 200,
-  },
-  {
-    number: 2,
-    suffix: "M€",
-    label: "en amendes et contrats perdus évitables chaque année par une PME bien structurée",
-    color: "#0D2B4E",
-    delay: 400,
-  },
+  { number: 83,  suffix: "%",     label: "des PME transport sans aucun outil pour prouver leur fiabilité", isAccent: true,  delay: 0 },
+  { number: 10,  suffix: "/jour", label: "transporteurs qui disparaissent en France faute de crédibilité", isAccent: false, delay: 200 },
+  { number: 2,   suffix: "M€",   label: "en sanctions et contrats perdus évitables chaque année",          isAccent: false, delay: 400 },
+]
+
+const TENSIONS = [
+  { title: "Conformité administrative ≠ organisation maîtrisée",    desc: "Documents à jour ne veut pas dire organisation solide. La conformité apparente masque souvent des fragilités opérationnelles réelles." },
+  { title: "Le déclaratif ne reflète pas la réalité terrain",       desc: "Les RFI et dossiers capturent ce qui est déclaré, rarement ce qui est pratiqué. L'écart peut coûter un contrat." },
+  { title: "Le prix devient l'arbitre quand rien ne se voit",       desc: "Sans preuve de fiabilité, les donneurs d'ordre décident sur le tarif. Les bons transporteurs perdent face aux moins-disants." },
+  { title: "La conformité évolue — les outils, non",                desc: "FCO, FIMO, licences, contrôles techniques : les délais bougent, les textes aussi. La veille manuelle ne suffit plus." },
 ]
 
 export function Problems() {
   const { ref, visible } = useReveal()
 
   return (
-    <section id="problems" ref={ref} className="bg-[#0D2B4E] py-24 lg:py-32 overflow-hidden">
+    <section id="problems" ref={ref} className="py-24 lg:py-32 overflow-hidden" style={{ background: "#EEF2F4" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
 
         {/* Header */}
         <div
           className="mb-20 max-w-3xl"
           style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(32px)",
+            opacity:    visible ? 1 : 0,
+            transform:  visible ? "translateY(0)" : "translateY(32px)",
             transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1)",
           }}
         >
-          <div className="section-eyebrow mb-5" style={{ color: "#00A896" }}>
-            <span style={{ background: "#00A896", height: "2px", width: "16px", borderRadius: "2px", display: "inline-block" }} />
-            Le problème
-          </div>
+          <div className="section-eyebrow mb-5">Le constat</div>
           <h2
-            className="font-black leading-[1.04] text-white"
-            style={{ fontSize: "clamp(36px, 5vw, 64px)", letterSpacing: "-2.5px" }}
+            className="font-black leading-[1.04]"
+            style={{ fontSize: "clamp(34px, 4.8vw, 58px)", letterSpacing: "-2px", color: "#1C2B35" }}
           >
             10 transporteurs disparaissent
             <br />
             chaque jour en France.
           </h2>
-          <p className="mt-5 text-[18px] font-light italic text-white/50">
+          <p className="mt-5 text-[18px] font-light italic" style={{ color: "#8FA4B2" }}>
             Pas parce qu'ils travaillent mal. Parce qu'ils ne peuvent pas le prouver.
           </p>
         </div>
 
-        {/* Stats — number-first, enormous */}
-        <div className="grid gap-0 md:grid-cols-3">
+        {/* Stats */}
+        <div className="grid gap-0 md:grid-cols-3 mb-20">
           {STATS.map((stat, i) => (
             <div
               key={stat.label}
-              className="relative flex flex-col justify-between border-t border-white/10 py-10 md:border-l md:border-t-0 md:px-10 first:border-t first:border-l-0 md:first:border-l-0 md:first:pl-0"
+              className="relative flex flex-col justify-between border-t py-10 md:border-l md:border-t-0 md:px-10 first:border-t first:border-l-0 md:first:border-l-0 md:first:pl-0"
               style={{
-                opacity: visible ? 1 : 0,
-                transform: visible ? "translateY(0)" : "translateY(40px)",
-                transition: `all 0.8s cubic-bezier(0.25,0.1,0.25,1) ${i * 120}ms`,
+                borderColor: "#D5DFE5",
+                opacity:     visible ? 1 : 0,
+                transform:   visible ? "translateY(0)" : "translateY(40px)",
+                transition:  `all 0.8s cubic-bezier(0.25,0.1,0.25,1) ${i * 120}ms`,
               }}
             >
-              {/* Big number */}
               <div
                 className="font-black leading-none tracking-tight"
                 style={{
-                  fontSize: "clamp(72px, 10vw, 120px)",
-                  color: stat.color === "#00A896" ? "#00A896" : "rgba(255,255,255,0.12)",
-                  letterSpacing: "-4px",
+                  fontSize:     "clamp(64px, 9vw, 108px)",
+                  color:        stat.isAccent ? "#4A7B8C" : "rgba(28,43,53,0.12)",
+                  letterSpacing:"-3px",
                 }}
               >
-                {stat.color === "#00A896" ? (
-                  <span style={{ color: "#00A896" }}>
-                    <AnimatedNumber value={stat.number} suffix={stat.suffix} delay={stat.delay} visible={visible} />
-                  </span>
-                ) : (
-                  <span className="text-white/20">
-                    <AnimatedNumber value={stat.number} suffix={stat.suffix} delay={stat.delay} visible={visible} />
-                  </span>
-                )}
+                <AnimatedNumber value={stat.number} suffix={stat.suffix} delay={stat.delay} visible={visible} />
               </div>
-
-              {/* Label */}
-              <p className="mt-4 max-w-[260px] text-[15px] font-medium leading-relaxed text-white/50">
+              <p className="mt-4 max-w-[260px] text-[14px] font-medium leading-relaxed" style={{ color: "#5E7485" }}>
                 {stat.label}
               </p>
-
-              {/* Number indicator */}
-              <div className="absolute top-10 right-0 text-[11px] font-bold tracking-widest text-white/15 uppercase">
+              <div className="absolute top-10 right-0 text-[10px] font-bold tracking-widest uppercase" style={{ color: "#B5C5CF" }}>
                 0{i + 1}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom statement */}
+        {/* Tensions */}
         <div
-          className="mt-16 rounded-2xl border border-[#00A896]/20 bg-[#00A896]/10 px-8 py-6"
+          className="grid gap-4 md:grid-cols-2"
           style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.5s",
+            opacity:    visible ? 1 : 0,
+            transform:  visible ? "translateY(0)" : "translateY(28px)",
+            transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.45s",
           }}
         >
-          <p className="text-center text-[17px] font-semibold text-white/70">
+          {TENSIONS.map((t) => (
+            <div
+              key={t.title}
+              className="rounded-xl p-6"
+              style={{ background: "#FFFFFF", borderLeft: "3px solid #4A7B8C" }}
+            >
+              <h4 className="text-[14px] font-bold mb-2" style={{ color: "#1C2B35" }}>{t.title}</h4>
+              <p className="text-[13px] leading-relaxed" style={{ color: "#5E7485" }}>{t.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom statement */}
+        <div
+          className="mt-10 rounded-xl border px-8 py-5"
+          style={{
+            borderColor: "rgba(74,123,140,0.25)",
+            background:  "rgba(74,123,140,0.06)",
+            opacity:     visible ? 1 : 0,
+            transform:   visible ? "translateY(0)" : "translateY(24px)",
+            transition:  "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.6s",
+          }}
+        >
+          <p className="text-center text-[16px] font-semibold" style={{ color: "#3A4E5A" }}>
             Le sérieux ne se voit pas.{" "}
-            <span className="text-white font-bold">Le prix devient l'arbitre.</span>{" "}
+            <span style={{ color: "#1C2B35", fontWeight: 700 }}>Le prix devient l'arbitre.</span>{" "}
             Les bons perdent.
           </p>
         </div>

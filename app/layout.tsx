@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CookieBanner } from '@/components/cookie-banner'
 import './globals.css'
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-jakarta',
   display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800'],
 })
 
 const BASE_URL = "https://cleargo.fr"
@@ -15,11 +16,11 @@ const BASE_URL = "https://cleargo.fr"
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'ClearGo — Compliance as a Service pour transporteurs | Diagnostic 199€',
+    default: 'ClearGo — Compliance as a Service pour transporteurs',
     template: '%s | ClearGo',
   },
   description:
-    'ClearGo est le service de conformité à la demande (CaaS) pour transporteurs routiers. Trust Score 0-1000, rapport PDF certifié, partageable en 1 clic. Pré-qualification gratuite. Diagnostic 199€.',
+    'ClearGo est le service de conformité à la demande (CaaS) pour transporteurs routiers. Trust Score 0-1000, rapport PDF certifié, partageable en 1 clic avec vos donneurs d\'ordre.',
   keywords: [
     'conformité transport routier',
     'compliance transporteur',
@@ -84,7 +85,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0D2B4E',
+  themeColor: '#4A7B8C',
 }
 
 const jsonLd = {
@@ -96,22 +97,6 @@ const jsonLd = {
   url: BASE_URL,
   description:
     'Service de conformité à la demande (CaaS) pour transporteurs routiers. Trust Score 0-1000, diagnostic complet, rapport PDF certifié.',
-  offers: [
-    {
-      '@type': 'Offer',
-      name: 'Diagnostic ClearGo',
-      price: '199',
-      priceCurrency: 'EUR',
-      description: 'Diagnostic complet conformité transport — Trust Score + rapport PDF + plan d\'action',
-    },
-    {
-      '@type': 'Offer',
-      name: 'Abonnement CaaS',
-      price: '99',
-      priceCurrency: 'EUR',
-      description: 'Abonnement mensuel Compliance as a Service — suivi continu, alertes, chatbot compliance',
-    },
-  ],
   provider: {
     '@type': 'Organization',
     name: 'ClearGo',
@@ -134,7 +119,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${plusJakarta.variable} font-sans antialiased`}>
         {children}
         <CookieBanner />
         <Analytics />

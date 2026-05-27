@@ -261,7 +261,7 @@ const QUESTIONS: Question[] = [
     id: "roi",
     type: "choice",
     block: "Vos objectifs",
-    label: "Qu'est-ce qui justifierait l'investissement pour vous ?",
+    label: "Qu'est-ce qui justifierait la démarche pour vous ?",
     hint: "Ce qui compte vraiment au bout du compte.",
     options: [
       "Décrocher 1 nouveau contrat grâce à ma conformité",
@@ -352,7 +352,7 @@ const QUESTIONS: Question[] = [
   },
 ]
 
-const TOTAL = QUESTIONS.length // 15 questions + contact = 16 étapes
+const TOTAL = QUESTIONS.length
 
 // ─── Synthesis generator ──────────────────────────────────────────────────────
 
@@ -361,7 +361,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
   const phase     = answers.phase     ?? ""
   const structure = answers.structure ?? ""
 
-  // ── Profile type ──────────────────────────────────────────────────────────
   let profilType = "Professionnel du transport"
   let profilSub  = "En quête de structuration et de visibilité"
 
@@ -392,7 +391,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
     profilSub  = "Vision long terme et structuration de la croissance"
   }
 
-  // ── Context pills ─────────────────────────────────────────────────────────
   const pills: string[] = []
   if (answers.activite)    pills.push(answers.activite)
   if (answers.clients)     pills.push(answers.clients)
@@ -401,38 +399,27 @@ function generateSynthesis(answers: Answers): SynthesisData {
   if (answers.structure)   pills.push(answers.structure)
   if (answers.phase)       pills.push(answers.phase.split("—")[0].trim())
 
-  // ── Douleurs (toutes les questions couvertes) ─────────────────────────────
   const douleurs: string[] = []
-
-  // Contrôles
   if (answers.controle === "Un contrôle est prévu dans les 6 mois")
     douleurs.push("Contrôle DRIEAT/DREAL imminent — préparation insuffisante")
   if (answers.controle === "Oui, avec des sanctions")
     douleurs.push("Antécédent de sanctions — surveillance renforcée probable")
-
-  // Contrats
   if (answers.contratPerdu === "Oui, ça m'est arrivé")
     douleurs.push("Perte de contrat avérée faute de preuve de conformité")
   if (answers.contratPerdu === "Non, mais je le crains")
     douleurs.push("Risque latent de perte de contrats clients")
-
-  // Documents
   if (answers.docsAJour === "Non, c'est désorganisé")
     douleurs.push("Documents éparpillés — introuvables en cas de contrôle ou d'urgence")
   if (answers.docsAJour === "Partiellement")
     douleurs.push("Conformité incomplète — des zones grises non traitées")
   if (answers.docsAJour === "Je ne sais pas évaluer")
     douleurs.push("Visibilité nulle sur le niveau réel de conformité")
-
-  // Sécurité / DUERP
   if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre")
     douleurs.push("DUERP absent — non-conformité légale, risque de sanction à l'Inspection du Travail")
   if (answers.securite === "DUERP existant mais pas mis à jour")
     douleurs.push("DUERP obsolète — non conforme aux obligations de mise à jour annuelle")
   if (answers.securite === "Je ne sais pas ce que c'est")
     douleurs.push("Sécurité au travail non couverte — risque légal et humain majeur")
-
-  // Organisation
   if (answers.frein === "Manque de temps")
     douleurs.push("Conformité reléguée au second plan par manque de temps")
   if (answers.frein?.includes("seul"))
@@ -443,23 +430,17 @@ function generateSynthesis(answers: Answers): SynthesisData {
     douleurs.push("Absence de méthode — ne sait pas par où commencer")
   if (answers.qse === "Non, j'en ai besoin")
     douleurs.push("Aucune compétence QSE internalisée")
-
-  // Outils
   if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
     douleurs.push("Aucun suivi de conformité en place — exposition invisible mais réelle")
   if (answers.outils === "Papier et classeurs physiques")
     douleurs.push("Gestion 100% papier — impossible à partager, auditer ou mettre à jour")
-
-  // Phase
   if (phase.includes("Croissance rapide"))
     douleurs.push("Croissance rapide non accompagnée d'une structuration réglementaire")
   if (phase.includes("Restructuration"))
     douleurs.push("Phase de restructuration — remise en ordre réglementaire urgente")
-
   if (douleurs.length === 0)
     douleurs.push("Besoin de visibilité objective sur le niveau de conformité")
 
-  // ── Urgency level ─────────────────────────────────────────────────────────
   let urgence: 1 | 2 | 3 = 1
   if (
     answers.controle === "Un contrôle est prévu dans les 6 mois" ||
@@ -471,9 +452,7 @@ function generateSynthesis(answers: Answers): SynthesisData {
     answers.delai === "1 à 3 mois"
   ) urgence = 2
 
-  // ── Recommendations (toutes les questions couvertes) ──────────────────────
   const reco: string[] = []
-
   if (urgence === 3)
     reco.push("Diagnostic flash sous 48h — identifier les risques critiques immédiatement")
   if (answers.priorite?.includes("audit"))
@@ -484,7 +463,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("Roadmap certification ISO / GDP structurée étape par étape")
   if (answers.priorite?.includes("A à Z"))
     reco.push("Audit complet 360° — couvrir tous les volets réglementaires de A à Z")
-
   if (answers.activite === "Pharma / GDP" || answers.clients?.includes("pharmaceutiques"))
     reco.push("Conformité GDP documentée avec audit trail complet")
   if (answers.activite?.includes("Messagerie") || answers.clients?.includes("E-commerce"))
@@ -493,30 +471,24 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("Dossier ADR structuré — formations, équipements et documents en règle")
   if (answers.activite?.includes("Température"))
     reco.push("Traçabilité température — conformité ATP et chaîne du froid documentée")
-
   if (answers.clients?.includes("Grands comptes"))
     reco.push("Profil ClearGo partageable — répondez aux due diligences grands comptes en 1 lien")
-
   if (answers.docsAJour === "Non, c'est désorganisé")
     reco.push("Centralisation documentaire complète — tout au même endroit, mis à jour en temps réel")
   if (answers.docsAJour === "Je ne sais pas évaluer")
     reco.push("Audit documentaire initial — cartographie exacte de ce qui manque")
-
   if (answers.qse === "Non, j'en ai besoin" || answers.frein?.includes("seul"))
     reco.push("Accompagnement complet — ClearGo agit comme votre QSE externalisé")
-
   if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
     reco.push("Module RSE & ISO 14001 — documentez et valorisez vos engagements environnementaux")
   if (answers.rse === "Oui, mais je ne sais pas comment les structurer ou documenter")
     reco.push("Structuration RSE clé en main — transformez vos pratiques en preuves documentées")
   if (answers.rse === "C'est une attente de mes clients — je dois m'y mettre")
     reco.push("Conformité RSE express — répondez aux exigences clients sans délai")
-
   if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre" || answers.securite === "Je ne sais pas ce que c'est")
     reco.push("DUERP clé en main — évaluation des risques professionnels conforme ISO 45001")
   if (answers.securite === "DUERP existant mais pas mis à jour")
     reco.push("Mise à jour DUERP + plan de prévention — remise en conformité rapide")
-
   if (answers.roi === "Décrocher 1 nouveau contrat grâce à ma conformité")
     reco.push("Trust Score 0-1000 + Certificate — argument commercial concret face aux donneurs d'ordre")
   if (answers.roi === "Éviter une sanction ou un audit raté")
@@ -525,16 +497,13 @@ function generateSynthesis(answers: Answers): SynthesisData {
     reco.push("Automatisation documentaire — fini les heures perdues à chercher un document")
   if (answers.roi === "Valoriser mon entreprise auprès de mes clients actuels")
     reco.push("Profil de confiance ClearGo — partageable en 1 lien, vérifiable par vos clients")
-
   if (answers.outils === "Je ne gère pas vraiment — c'est le flou" || answers.outils === "Papier et classeurs physiques")
     reco.push("Migration documentaire complète — on part de zéro et on structure tout ensemble")
   if (answers.outils === "Fichiers Excel / Google Sheets")
     reco.push("Remplacement Excel — plateforme dédiée, collaborative, mise à jour en temps réel")
-
   if (reco.length < 2) reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
   if (reco.length < 3) reco.push("Plan d'action personnalisé avec priorisation des actions à fort impact")
 
-  // ── Citation type ─────────────────────────────────────────────────────────
   let citation = `"Je veux savoir où j'en suis vraiment, et agir sur ce qui compte."`
   if (urgence === 3)
     citation = `"J'ai besoin de résultats vite — je ne peux pas me permettre d'attendre."`
@@ -547,9 +516,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
   else if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
     citation = `"Je sais que je dois m'organiser. Je ne sais juste pas par où attaquer."`
 
-  // ── SWOT ─────────────────────────────────────────────────────────────────
-
-  // Forces — ce que le prospect fait déjà bien
   const forces: string[] = []
   if (answers.docsAJour === "Oui, complètement")
     forces.push("Documents de conformité à jour et bien organisés")
@@ -572,7 +538,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
   if (forces.length === 0)
     forces.push("Activité en exercice — expérience terrain solide")
 
-  // Faiblesses — points internes à corriger
   const faiblesses: string[] = []
   if (answers.docsAJour === "Non, c'est désorganisé")
     faiblesses.push("Documents éparpillés — aucune centralisation ni traçabilité")
@@ -599,7 +564,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
   if (faiblesses.length === 0)
     faiblesses.push("Processus internes à formaliser pour passer à l'échelle")
 
-  // Opportunités — leviers externes à saisir
   const opportunites: string[] = []
   if (answers.priorite?.includes("appels d'offres"))
     opportunites.push("Appels d'offres accessibles grâce à la preuve de conformité")
@@ -622,7 +586,6 @@ function generateSynthesis(answers: Answers): SynthesisData {
   if (opportunites.length === 0)
     opportunites.push("Structuration de la conformité comme levier de croissance durable")
 
-  // Menaces — risques externes à anticiper
   const menaces: string[] = []
   if (answers.controle === "Un contrôle est prévu dans les 6 mois")
     menaces.push("Contrôle DRIEAT/DREAL imminent — risque de sanction à court terme")
@@ -665,10 +628,11 @@ interface PrequalFunnelProps {
 }
 
 export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
-  const [step, setStep]           = useState(0)
-  const [answers, setAnswers]     = useState<Answers>({})
-  const [direction, setDirection] = useState<"forward" | "back">("forward")
-  const [animating, setAnimating] = useState(false)
+  const [siretPhase, setSiretPhase]   = useState(true)   // true = SIRET identification screen
+  const [step, setStep]               = useState(0)
+  const [answers, setAnswers]         = useState<Answers>({})
+  const [direction, setDirection]     = useState<"forward" | "back">("forward")
+  const [animating, setAnimating]     = useState(false)
   const [prenom, setPrenom]           = useState("")
   const [nom, setNom]                 = useState("")
   const [societe, setSociete]         = useState("")
@@ -682,11 +646,11 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const [synthesis, setSynthesis]     = useState<SynthesisData | null>(null)
   const textareaRef                   = useRef<HTMLTextAreaElement>(null)
 
-  const isDone    = step === TOTAL + 1
-  const isContact = step === TOTAL
-  const progress  = isDone ? 100 : Math.round((step / (TOTAL + 1)) * 100)
+  const isDone    = !siretPhase && step === TOTAL + 1
+  const isContact = !siretPhase && step === TOTAL
+  const progress  = siretPhase ? 0 : isDone ? 100 : Math.round((step / (TOTAL + 1)) * 100)
 
-  const currentQ      = step < QUESTIONS.length ? QUESTIONS[step] : null
+  const currentQ      = !siretPhase && step < QUESTIONS.length ? QUESTIONS[step] : null
   const currentAnswer = currentQ ? (answers[currentQ.id] ?? "") : ""
 
   // Lock scroll
@@ -694,7 +658,7 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     document.body.style.overflow = open ? "hidden" : ""
     if (!open) {
       setTimeout(() => {
-        setStep(0); setAnswers({}); setPrenom(""); setNom("")
+        setSiretPhase(true); setStep(0); setAnswers({}); setPrenom(""); setNom("")
         setSociete(""); setSiret(""); setSiretData(null)
         setSiretError(false); setEmail(""); setTel(""); setSynthesis(null)
       }, 300)
@@ -752,7 +716,14 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   }
 
   function goBack() {
-    if (step > 0) go(step - 1, "back")
+    if (siretPhase) return
+    if (step === 0) { setSiretPhase(true); return }
+    go(step - 1, "back")
+  }
+
+  function startDiagnostic() {
+    if (siretData && !societe) setSociete(siretData.nom)
+    setSiretPhase(false)
   }
 
   async function submitContact(e: React.FormEvent) {
@@ -827,19 +798,19 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     ? synthesis.urgence === 3 ? "URGENT" : synthesis.urgence === 2 ? "PRIORITAIRE" : "STANDARD"
     : ""
   const urgenceColor = synthesis
-    ? synthesis.urgence === 3 ? "#EF4444" : synthesis.urgence === 2 ? "#F59E0B" : "#00A896"
-    : "#00A896"
+    ? synthesis.urgence === 3 ? "#EF4444" : synthesis.urgence === 2 ? "#F59E0B" : "#4A7B8C"
+    : "#4A7B8C"
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-[#081B32]/75 backdrop-blur-md"
+        className="absolute inset-0 backdrop-blur-md"
+        style={{ background: "rgba(28,43,53,0.75)", animation: "fadeIn 0.2s ease both" }}
         onClick={close}
-        style={{ animation: "fadeIn 0.2s ease both" }}
       />
 
-      {/* Modal — bottom sheet on mobile, centered on desktop */}
+      {/* Modal */}
       <div
         className="relative w-full sm:max-w-lg flex flex-col bg-white sm:rounded-3xl overflow-hidden shadow-2xl"
         style={{
@@ -849,19 +820,24 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
         }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center gap-3 px-6 pt-5 pb-4 border-b border-[#F0F4F8]">
+        <div className="flex items-center gap-3 px-6 pt-5 pb-4 border-b" style={{ borderColor: "#F0F4F8" }}>
           <button
             onClick={goBack}
-            className={`p-2 rounded-xl hover:bg-[#F0F4F8] text-[#94A3B8] transition-all ${step === 0 || isDone ? "invisible" : ""}`}
+            className="p-2 rounded-xl transition-all"
+            style={{
+              visibility: (siretPhase || isDone) ? "hidden" : "visible",
+              background: "transparent",
+              color: "#8FA4B2",
+            }}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#00A896]">
-              {isDone ? "Votre synthèse personnalisée" : "Pré-qualification gratuite"}
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4A7B8C" }}>
+              {isDone ? "Votre synthèse personnalisée" : siretPhase ? "Identification de votre entreprise" : "Pré-qualification gratuite"}
             </p>
-            {!isDone && (
-              <p className="text-[11px] text-[#94A3B8] mt-0.5">
+            {!isDone && !siretPhase && (
+              <p className="text-[11px] mt-0.5" style={{ color: "#8FA4B2" }}>
                 {isContact
                   ? "Dernière étape"
                   : currentQ
@@ -870,32 +846,36 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
               </p>
             )}
           </div>
-          <button onClick={close} className="p-2 rounded-xl hover:bg-[#F0F4F8] text-[#94A3B8] transition-colors">
+          <button
+            onClick={close}
+            className="p-2 rounded-xl transition-colors"
+            style={{ color: "#8FA4B2" }}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* ── Progress bar ── */}
-        {!isDone && (
-          <div className="h-[3px] bg-[#F0F4F8]">
+        {!isDone && !siretPhase && (
+          <div className="h-[3px]" style={{ background: "#F0F4F8" }}>
             <div
-              className="h-full bg-[#00A896]"
-              style={{ width: `${progress}%`, transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)" }}
+              className="h-full"
+              style={{ width: `${progress}%`, background: "#4A7B8C", transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)" }}
             />
           </div>
         )}
 
         {/* ── Social proof strip ── */}
-        {!isDone && !isContact && (
-          <div className="flex items-center justify-center gap-4 border-b border-[#F0F4F8] bg-[#F8FAFC] px-6 py-2">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4A5A72]">
+        {!isDone && !isContact && !siretPhase && (
+          <div className="flex items-center justify-center gap-4 border-b px-6 py-2" style={{ borderColor: "#F0F4F8", background: "#F5F7F8" }}>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#5E7485" }}>
               <span>⏱</span>
               <span>1 min 45</span>
             </span>
-            <span className="h-3 w-px bg-[#CBD5E1]" />
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4A5A72]">
+            <span className="h-3 w-px" style={{ background: "#D5DFE5" }} />
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#5E7485" }}>
               <span>✅</span>
-              <span><strong className="text-[#0D2B4E]">3 284</strong> transporteurs ont déjà répondu</span>
+              <span><strong style={{ color: "#1C2B35" }}>3 284</strong> transporteurs ont déjà répondu</span>
             </span>
           </div>
         )}
@@ -903,29 +883,144 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
         {/* ── Content ── */}
         <div className="overflow-y-auto flex-1 px-6 py-6">
 
+          {/* ══ SIRET IDENTIFICATION SCREEN ═════════════════════════════════ */}
+          {siretPhase && (
+            <div style={{ animation: "scaleUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4A7B8C" }}>
+                <span className="h-px w-6" style={{ background: "#4A7B8C" }} />
+                Étape 1 sur 2
+              </div>
+              <h3
+                className="font-black leading-tight mb-2"
+                style={{ fontSize: "clamp(20px, 4vw, 26px)", color: "#1C2B35" }}
+              >
+                Identifiez votre entreprise
+              </h3>
+              <p className="mb-6 text-[14px] leading-relaxed" style={{ color: "#5E7485" }}>
+                Entrez votre SIRET — on identifie automatiquement votre société, votre secteur NAF et vos obligations réglementaires.
+              </p>
+
+              {/* SIRET input */}
+              <div className="mb-4">
+                <label
+                  className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider"
+                  style={{ color: "#1C2B35" }}
+                >
+                  SIRET
+                  {siretLoading && <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#4A7B8C" }} />}
+                </label>
+                <input
+                  type="text"
+                  value={siret}
+                  onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
+                  placeholder="362 521 879 00034"
+                  maxLength={17}
+                  className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder-opacity-40 outline-none transition-all"
+                  style={{
+                    borderColor: siretData ? "#4A7B8C" : siretError ? "#EF4444" : "#D5DFE5",
+                    background: siretData ? "rgba(74,123,140,0.05)" : "#F5F7F8",
+                    color: "#1C2B35",
+                  }}
+                  autoFocus
+                />
+                {siretError && (
+                  <p className="mt-1.5 text-[11px] text-red-500">SIRET non trouvé — vérifiez les 14 chiffres</p>
+                )}
+              </div>
+
+              {/* Company card */}
+              {siretData && (
+                <div
+                  className="mb-5 rounded-xl border p-4"
+                  style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
+                      style={{ background: "#4A7B8C" }}
+                    >
+                      <Building2 className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[14px] font-black truncate" style={{ color: "#1C2B35" }}>{siretData.nom}</p>
+                        {siretData.isTransport && (
+                          <span
+                            className="flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
+                            style={{ background: "#4A7B8C" }}
+                          >
+                            Transport ✓
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                        {siretData.adresse && (
+                          <p className="col-span-2 text-[11px]" style={{ color: "#5E7485" }}>
+                            📍 {siretData.adresse}, {siretData.codePostal} {siretData.ville}
+                          </p>
+                        )}
+                        {siretData.libelleNaf && (
+                          <p className="text-[11px]" style={{ color: "#5E7485" }}>🏷 {siretData.naf} — {siretData.libelleNaf}</p>
+                        )}
+                        {siretData.effectif && (
+                          <p className="text-[11px]" style={{ color: "#5E7485" }}>👥 {siretData.effectif}</p>
+                        )}
+                        {siretData.dateCreation && (
+                          <p className="text-[11px]" style={{ color: "#5E7485" }}>📅 Créée en {siretData.dateCreation}</p>
+                        )}
+                        <p className="text-[11px]" style={{ color: "#5E7485" }}>🔢 SIREN {siretData.siren}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CTA */}
+              <button
+                type="button"
+                onClick={startDiagnostic}
+                className="btn-press w-full rounded-2xl py-4 text-[16px] font-extrabold text-white"
+                style={{
+                  background: siretData ? "#4A7B8C" : "#1C2B35",
+                  boxShadow: siretData ? "0 8px 32px -4px rgba(74,123,140,0.45)" : "none",
+                }}
+              >
+                {siretData ? `Démarrer le diagnostic — ${siretData.nom.split(" ")[0]} →` : "Continuer sans SIRET →"}
+              </button>
+
+              {!siretData && (
+                <p className="mt-2 text-center text-[11px]" style={{ color: "#8FA4B2" }}>
+                  Vous pourrez renseigner votre SIRET plus tard
+                </p>
+              )}
+              <p className="mt-3 text-center text-[11px]" style={{ color: "#8FA4B2" }}>
+                Gratuit · Sans engagement · 5 minutes
+              </p>
+            </div>
+          )}
+
           {/* ══ SYNTHESIS SCREEN ══════════════════════════════════════════════ */}
           {isDone && synthesis && (
             <div style={{ animation: "scaleUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
 
               {/* Profil card */}
-              <div className="rounded-2xl bg-[#0D2B4E] p-5 mb-5">
+              <div className="rounded-2xl p-5 mb-5" style={{ background: "#1C2B35" }}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#00A896] mb-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7B8C" }}>
                       Profil identifié
                     </p>
                     <p className="text-[18px] font-black text-white leading-tight">{synthesis.profilType}</p>
                     <p className="text-[12px] text-white/50 mt-0.5">{synthesis.profilSub}</p>
                   </div>
                   <div
-                    className="flex-shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest"
-                    style={{ background: urgenceColor, color: "white" }}
+                    className="flex-shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-white"
+                    style={{ background: urgenceColor }}
                   >
                     {urgenceLabel}
                   </div>
                 </div>
-                {/* Citation type */}
-                <div className="rounded-xl border border-white/10 bg-white/8 px-4 py-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.08] px-4 py-3">
                   <p className="text-[13px] font-medium italic text-white/75">{synthesis.citation}</p>
                 </div>
               </div>
@@ -936,7 +1031,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                   {synthesis.pills.map((p) => (
                     <span
                       key={p}
-                      className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-[11px] font-semibold text-[#4A5A72]"
+                      className="rounded-full border px-3 py-1 text-[11px] font-semibold"
+                      style={{ borderColor: "#D5DFE5", background: "white", color: "#5E7485" }}
                     >
                       {p}
                     </span>
@@ -945,32 +1041,38 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
               )}
 
               {/* Douleurs identifiées */}
-              <div className="mb-4 rounded-2xl border border-[#FEE2E2] bg-[#FFF5F5] p-5">
-                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#EF4444]">
+              <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-5">
+                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-red-500">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   Douleurs identifiées
                 </p>
                 <div className="flex flex-col gap-2.5">
                   {synthesis.douleurs.map((d) => (
                     <div key={d} className="flex items-start gap-2.5">
-                      <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EF4444]" />
-                      <p className="text-[13px] text-[#0D2B4E]">{d}</p>
+                      <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
+                      <p className="text-[13px]" style={{ color: "#1C2B35" }}>{d}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Ce que ClearGo peut faire */}
-              <div className="mb-4 rounded-2xl border border-[#CCEDE9] bg-[#F0FAFA] p-5">
-                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#00A896]">
+              <div
+                className="mb-4 rounded-2xl border p-5"
+                style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
+              >
+                <p
+                  className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "#4A7B8C" }}
+                >
                   <Zap className="h-3.5 w-3.5" />
                   Ce que ClearGo peut faire pour vous
                 </p>
                 <div className="flex flex-col gap-2.5">
                   {synthesis.reco.map((r) => (
                     <div key={r} className="flex items-start gap-2.5">
-                      <CheckCircle2 className="mt-[2px] h-4 w-4 flex-shrink-0 text-[#00A896]" strokeWidth={2.5} />
-                      <p className="text-[13px] text-[#0D2B4E]">{r}</p>
+                      <CheckCircle2 className="mt-[2px] h-4 w-4 flex-shrink-0" style={{ color: "#4A7B8C" }} strokeWidth={2.5} />
+                      <p className="text-[13px]" style={{ color: "#1C2B35" }}>{r}</p>
                     </div>
                   ))}
                 </div>
@@ -978,62 +1080,50 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
               {/* SWOT */}
               <div className="mb-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#8FA4B2" }}>
                   Analyse SWOT — vue d&apos;ensemble
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Forces */}
-                  <div className="rounded-2xl border border-[#BBEDD6] bg-[#F0FBF5] p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#16A34A]">
-                      💪 Forces
-                    </p>
+                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-green-700">💪 Forces</p>
                     <ul className="flex flex-col gap-1.5">
                       {synthesis.swot.forces.slice(0, 3).map((f) => (
                         <li key={f} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#16A34A]" />
-                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{f}</span>
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-600" />
+                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{f}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Faiblesses */}
-                  <div className="rounded-2xl border border-[#FEE2E2] bg-[#FFF5F5] p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#DC2626]">
-                      ⚠️ Faiblesses
-                    </p>
+                  <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-red-600">⚠️ Faiblesses</p>
                     <ul className="flex flex-col gap-1.5">
                       {synthesis.swot.faiblesses.slice(0, 3).map((f) => (
                         <li key={f} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#DC2626]" />
-                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{f}</span>
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
+                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{f}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Opportunités */}
-                  <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#2563EB]">
-                      🚀 Opportunités
-                    </p>
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600">🚀 Opportunités</p>
                     <ul className="flex flex-col gap-1.5">
                       {synthesis.swot.opportunites.slice(0, 3).map((o) => (
                         <li key={o} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2563EB]" />
-                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{o}</span>
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
+                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{o}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Menaces */}
-                  <div className="rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#EA580C]">
-                      🔥 Menaces
-                    </p>
+                  <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-orange-600">🔥 Menaces</p>
                     <ul className="flex flex-col gap-1.5">
                       {synthesis.swot.menaces.slice(0, 3).map((m) => (
                         <li key={m} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EA580C]" />
-                          <span className="text-[11px] leading-snug text-[#0D2B4E]">{m}</span>
+                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-500" />
+                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{m}</span>
                         </li>
                       ))}
                     </ul>
@@ -1041,29 +1131,40 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 </div>
               </div>
 
-              {/* Ce qui vous attend */}
-              <div className="mb-5 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
-                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
+              {/* Ce qui vous attend — sans prix */}
+              <div className="mb-5 rounded-2xl border p-5" style={{ borderColor: "#D5DFE5", background: "#F5F7F8" }}>
+                <p
+                  className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "#8FA4B2" }}
+                >
                   <Target className="h-3.5 w-3.5" />
                   Ce qui vous attend
                 </p>
                 {[
                   "Résultat de pré-qualification sous 24h",
-                  "Accès au diagnostic complet à 299€",
                   "Trust Score 0-1000 + plan d'action personnalisé",
+                  "Prise de contact par un expert ClearGo",
                 ].map((item) => (
-                  <div key={item} className="flex items-center gap-3 border-b border-[#E2E8F0] py-2 last:border-0">
-                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#00A896] text-[10px] font-black text-white">
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 border-b py-2 last:border-0"
+                    style={{ borderColor: "#D5DFE5" }}
+                  >
+                    <span
+                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white"
+                      style={{ background: "#4A7B8C" }}
+                    >
                       ✓
                     </span>
-                    <span className="text-[13px] font-medium text-[#0D2B4E]">{item}</span>
+                    <span className="text-[13px] font-medium" style={{ color: "#1C2B35" }}>{item}</span>
                   </div>
                 ))}
               </div>
 
               <button
                 onClick={close}
-                className="btn-press w-full rounded-2xl bg-[#0D2B4E] py-4 text-[15px] font-bold text-white"
+                className="btn-press w-full rounded-2xl py-4 text-[15px] font-bold text-white"
+                style={{ background: "#1C2B35" }}
               >
                 Fermer
               </button>
@@ -1073,11 +1174,16 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           {/* ══ CONTACT ══════════════════════════════════════════════════════ */}
           {!isDone && isContact && (
             <div style={slideStyle}>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-[#00A896]">Étape finale</p>
-              <h3 className="mb-2 text-[22px] font-black leading-tight text-[#0D2B4E]">
+              <p
+                className="mb-2 text-[11px] font-bold uppercase tracking-widest"
+                style={{ color: "#4A7B8C" }}
+              >
+                Étape finale
+              </p>
+              <h3 className="mb-2 text-[22px] font-black leading-tight" style={{ color: "#1C2B35" }}>
                 Où envoyer votre synthèse ?
               </h3>
-              <p className="mb-7 text-[14px] leading-relaxed text-[#4A5A72]">
+              <p className="mb-7 text-[14px] leading-relaxed" style={{ color: "#5E7485" }}>
                 On génère votre profil personnalisé et on vous recontacte sous 24h.
               </p>
               <form onSubmit={submitContact} className="flex flex-col gap-4">
@@ -1085,102 +1191,99 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 {/* Prénom + Nom */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Prénom</label>
-                    <input type="text" required value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Jean"
-                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Prénom</label>
+                    <input
+                      type="text" required value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Jean"
+                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
+                    />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Nom</label>
-                    <input type="text" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont"
-                      className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Nom</label>
+                    <input
+                      type="text" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont"
+                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
+                    />
                   </div>
                 </div>
 
                 {/* Société */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Société</label>
-                  <input type="text" required value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
-                </div>
-
-                {/* SIRET */}
-                <div>
-                  <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                    SIRET
-                    <span className="font-normal normal-case text-[#94A3B8]">(optionnel — on vérifie automatiquement)</span>
-                    {siretLoading && <Loader2 className="h-3 w-3 animate-spin text-[#00A896]" />}
-                  </label>
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Société</label>
                   <input
-                    type="text" value={siret}
-                    onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
-                    placeholder="362 521 879 00034"
-                    maxLength={17}
-                    className={`w-full rounded-xl border-2 bg-[#F8FAFC] px-4 py-3 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:bg-white ${
-                      siretData ? "border-[#00A896]" : siretError ? "border-[#EF4444]" : "border-[#E2E8F0] focus:border-[#00A896]"
-                    }`}
+                    type="text" required value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
+                    className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                    style={{ borderColor: "#D5DFE5", background: siretData ? "rgba(74,123,140,0.05)" : "#F5F7F8", color: "#1C2B35" }}
                   />
-                  {siretError && (
-                    <p className="mt-1 text-[11px] text-[#EF4444]">SIRET non trouvé — vérifiez les 14 chiffres</p>
-                  )}
-
-                  {/* Carte société vérifiée */}
                   {siretData && (
-                    <div className="mt-3 rounded-xl border border-[#CCEDE9] bg-[#F0FAFA] p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#00A896]">
-                          <Building2 className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-[13px] font-black text-[#0D2B4E] truncate">{siretData.nom}</p>
-                            {siretData.isTransport && (
-                              <span className="flex-shrink-0 rounded-full bg-[#00A896] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Transport ✓</span>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                            {siretData.adresse && (
-                              <p className="col-span-2 text-[11px] text-[#4A5A72]">📍 {siretData.adresse}, {siretData.codePostal} {siretData.ville}</p>
-                            )}
-                            {siretData.libelleNaf && (
-                              <p className="text-[11px] text-[#4A5A72]">🏷 {siretData.naf} — {siretData.libelleNaf}</p>
-                            )}
-                            {siretData.effectif && (
-                              <p className="text-[11px] text-[#4A5A72]">👥 {siretData.effectif}</p>
-                            )}
-                            {siretData.dateCreation && (
-                              <p className="text-[11px] text-[#4A5A72]">📅 Créée en {siretData.dateCreation}</p>
-                            )}
-                            <p className="text-[11px] text-[#4A5A72]">🔢 SIREN {siretData.siren}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="mt-1 text-[11px]" style={{ color: "#4A7B8C" }}>
+                      ✓ Pré-rempli depuis votre SIRET
+                    </p>
                   )}
                 </div>
+
+                {/* SIRET — only if not already entered */}
+                {!siretData && (
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>
+                      SIRET
+                      <span className="font-normal normal-case" style={{ color: "#8FA4B2" }}>(optionnel)</span>
+                    </label>
+                    <input
+                      type="text" value={siret}
+                      onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
+                      placeholder="362 521 879 00034"
+                      maxLength={17}
+                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
+                    />
+                  </div>
+                )}
+
+                {/* SIRET confirmed badge */}
+                {siretData && (
+                  <div
+                    className="flex items-center gap-3 rounded-xl border px-4 py-3"
+                    style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
+                  >
+                    <Building2 className="h-4 w-4 flex-shrink-0" style={{ color: "#4A7B8C" }} />
+                    <div>
+                      <p className="text-[12px] font-bold" style={{ color: "#1C2B35" }}>{siretData.nom}</p>
+                      <p className="text-[11px]" style={{ color: "#5E7485" }}>SIRET {siretData.siret} · {siretData.naf} · {siretData.effectif}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Email */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">Email professionnel</label>
-                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@transport.fr"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Email professionnel</label>
+                  <input
+                    type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@transport.fr"
+                    className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
+                  />
                 </div>
 
                 {/* Téléphone */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[#0D2B4E]">
-                    Téléphone <span className="font-normal normal-case text-[#94A3B8]">(optionnel)</span>
+                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>
+                    Téléphone <span className="font-normal normal-case" style={{ color: "#8FA4B2" }}>(optionnel)</span>
                   </label>
-                  <input type="tel" value={tel} onChange={(e) => setTel(e.target.value)} placeholder="06 XX XX XX XX"
-                    className="w-full rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] font-medium text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white" />
+                  <input
+                    type="tel" value={tel} onChange={(e) => setTel(e.target.value)} placeholder="06 XX XX XX XX"
+                    className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
+                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
+                  />
                 </div>
                 <button
                   type="submit" disabled={sending}
-                  className="btn-press mt-2 w-full rounded-2xl bg-[#00A896] py-4 text-[16px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
-                  style={{ boxShadow: "0 8px 32px -4px rgba(0,168,150,0.4)" }}
+                  className="btn-press mt-2 w-full rounded-2xl py-4 text-[16px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
+                  style={{ background: "#4A7B8C", boxShadow: "0 8px 32px -4px rgba(74,123,140,0.4)" }}
                 >
                   {sending ? "Génération en cours…" : "Voir ma synthèse personnalisée →"}
                 </button>
-                <p className="text-center text-[11px] text-[#94A3B8]">
+                <p className="text-center text-[11px]" style={{ color: "#8FA4B2" }}>
                   Pas de spam · Aucun engagement · Réponse sous 24h
                 </p>
               </form>
@@ -1188,16 +1291,16 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           )}
 
           {/* ══ QUESTIONS ════════════════════════════════════════════════════ */}
-          {!isDone && currentQ && (
+          {!isDone && !siretPhase && currentQ && (
             <div style={slideStyle}>
               <h3
-                className="font-black leading-tight text-[#0D2B4E] mb-2"
-                style={{ fontSize: "clamp(18px, 3.5vw, 22px)" }}
+                className="font-black leading-tight mb-2"
+                style={{ fontSize: "clamp(18px, 3.5vw, 22px)", color: "#1C2B35" }}
               >
                 {currentQ.label}
               </h3>
               {currentQ.hint && (
-                <p className="text-[13px] text-[#94A3B8] mb-5">{currentQ.hint}</p>
+                <p className="text-[13px] mb-5" style={{ color: "#8FA4B2" }}>{currentQ.hint}</p>
               )}
 
               {/* ── Choice question ── */}
@@ -1212,9 +1315,9 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                         onClick={() => selectOption(opt)}
                         className="w-full text-left rounded-2xl border-2 px-5 py-4 text-[14px] font-semibold transition-all"
                         style={{
-                          borderColor: selected ? "#00A896" : "#E2E8F0",
-                          background:  selected ? "#E6F7F5" : "#FAFBFC",
-                          color:       selected ? "#0D2B4E" : "#4A5A72",
+                          borderColor: selected ? "#4A7B8C" : "#D5DFE5",
+                          background:  selected ? "rgba(74,123,140,0.08)" : "#FAFBFC",
+                          color:       selected ? "#1C2B35" : "#5E7485",
                           transform:   selected ? "scale(1.01)" : "scale(1)",
                         }}
                       >
@@ -1222,8 +1325,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                           <span
                             className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all"
                             style={{
-                              borderColor: selected ? "#00A896" : "#CBD5E1",
-                              background:  selected ? "#00A896" : "transparent",
+                              borderColor: selected ? "#4A7B8C" : "#D5DFE5",
+                              background:  selected ? "#4A7B8C" : "transparent",
                             }}
                           >
                             {selected && <span className="h-2 w-2 rounded-full bg-white" />}
@@ -1247,14 +1350,16 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                     }
                     placeholder={currentQ.placeholder}
                     rows={4}
-                    className="w-full resize-none rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[14px] font-medium leading-relaxed text-[#0D2B4E] placeholder:text-[#94A3B8] outline-none transition-all focus:border-[#00A896] focus:bg-white"
+                    className="w-full resize-none rounded-xl border-2 px-4 py-3.5 text-[14px] font-medium leading-relaxed placeholder:text-[#8FA4B2] outline-none transition-all"
+                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
                   />
                   <div className="mt-4 flex gap-3">
                     {currentQ.optional && (
                       <button
                         type="button"
                         onClick={submitOpenQuestion}
-                        className="flex-1 rounded-xl border-2 border-[#E2E8F0] py-3.5 text-[14px] font-semibold text-[#94A3B8] transition-all hover:border-[#00A896] hover:text-[#0D2B4E]"
+                        className="flex-1 rounded-xl border-2 py-3.5 text-[14px] font-semibold transition-all"
+                        style={{ borderColor: "#D5DFE5", color: "#8FA4B2" }}
                       >
                         Passer →
                       </button>
@@ -1263,11 +1368,10 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                       type="button"
                       onClick={submitOpenQuestion}
                       disabled={!currentQ.optional && !currentAnswer.trim()}
-                      className="btn-press flex-1 rounded-xl bg-[#00A896] py-3.5 text-[14px] font-bold text-white transition-all disabled:pointer-events-none disabled:opacity-40"
+                      className="btn-press flex-1 rounded-xl py-3.5 text-[14px] font-bold text-white transition-all disabled:pointer-events-none disabled:opacity-40"
                       style={{
-                        boxShadow: currentAnswer.trim()
-                          ? "0 6px 20px -4px rgba(0,168,150,0.4)"
-                          : "none",
+                        background: "#4A7B8C",
+                        boxShadow: currentAnswer.trim() ? "0 6px 20px -4px rgba(74,123,140,0.4)" : "none",
                       }}
                     >
                       Continuer →
@@ -1279,8 +1383,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           )}
         </div>
 
-        {/* Teal bottom stripe */}
-        <div className="h-1 flex-shrink-0 bg-[#00A896]" />
+        {/* Bottom accent stripe */}
+        <div className="h-1 flex-shrink-0" style={{ background: "#4A7B8C" }} />
       </div>
     </div>
   )
