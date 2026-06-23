@@ -123,27 +123,6 @@ export function Hero({ onCta }: HeroProps) {
 
           {/* ── LEFT ─────────────────────────────────────────────────── */}
           <div>
-            {/* SITL badge */}
-            <div
-              className="mb-7 inline-block"
-              style={{
-                opacity:    loaded ? 1 : 0,
-                transform:  loaded ? "translateY(0)" : "translateY(14px)",
-                transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1)",
-              }}
-            >
-              <div className="overflow-hidden rounded-xl shadow-sm border border-[#D5DFE5]" style={{ width: 300, height: 46 }}>
-                <Image
-                  src="/images/sitl-badge.jpg"
-                  alt="Start-up Contest SITL 2026 — Nominé"
-                  width={1300}
-                  height={200}
-                  className="h-full w-full object-cover object-left"
-                  priority
-                />
-              </div>
-            </div>
-
             {/* CaaS chip */}
             <div
               className="mb-5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5"
