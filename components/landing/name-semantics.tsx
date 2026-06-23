@@ -28,7 +28,7 @@ export function NameSemantics() {
   const { ref, visible } = useReveal()
 
   return (
-    <section className="bg-[#04111F] py-12 lg:py-16" ref={ref}>
+    <section className="py-12 lg:py-16" ref={ref} style={{ background: "#1C2B35" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         <div
           style={{

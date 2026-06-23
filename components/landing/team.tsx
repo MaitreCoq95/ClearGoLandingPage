@@ -7,28 +7,28 @@ const PRODUCTS = [
     emoji: "🚛",
     name: "ClearGo",
     status: "Actif",
-    statusColor: "bg-[#00A896] text-white",
+    statusStyle: { background: "#4A7B8C", color: "white" },
     desc: "Conformité & Trust Score transporteurs",
   },
   {
     emoji: "💊",
     name: "Gaby",
     status: "En dev",
-    statusColor: "bg-orange-100 text-orange-700",
+    statusStyle: { background: "#FEF3C7", color: "#92400E" },
     desc: "Livraison pharmaceutique GDP-native",
   },
   {
     emoji: "🎬",
     name: "TurtleRun",
     status: "En dev",
-    statusColor: "bg-orange-100 text-orange-700",
+    statusStyle: { background: "#FEF3C7", color: "#92400E" },
     desc: "Transport B2B événementiel & cinéma",
   },
   {
     emoji: "🔒",
     name: "Projet confidentiel",
     status: "2027",
-    statusColor: "bg-gray-100 text-gray-600",
+    statusStyle: { background: "#F0F0F0", color: "#6B7280" },
     desc: "Marketplace compliance T° dirigée",
   },
 ]
@@ -55,43 +55,55 @@ export function Team() {
   }, [])
 
   return (
-    <section id="team" className="bg-white py-24" ref={ref}>
+    <section id="team" className="py-24" ref={ref} style={{ background: "#FAFBFC" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
 
         {/* Header */}
         <div
-          className={`text-center transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
+          className="text-center"
+          style={{
+            opacity:    visible ? 1 : 0,
+            transform:  visible ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1)",
+          }}
         >
-          <h2 className="font-black text-4xl leading-tight tracking-tight text-[#0D2B4E] lg:text-5xl">
-            L'équipe derrière ClearGo
+          <div className="section-eyebrow mb-4" style={{ justifyContent: "center" }}>L'équipe</div>
+          <h2
+            className="font-black"
+            style={{ fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: "-1.8px", lineHeight: 1.06, color: "#1C2B35" }}
+          >
+            Fondée par des professionnels du transport.
           </h2>
-          <p className="mt-3 text-xl italic text-[#00A896]">15 ans terrain. Fondée par des professionnels du transport.</p>
+          <p className="mt-3 text-[17px] italic" style={{ color: "#4A7B8C" }}>15 ans terrain. La conformité vue de l'intérieur.</p>
         </div>
 
         {/* 2-col layout */}
         <div
-          className={`mt-14 grid gap-10 lg:grid-cols-2 transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-          style={{ transitionDelay: "150ms" }}
+          className="mt-14 grid gap-10 lg:grid-cols-2"
+          style={{
+            opacity:    visible ? 1 : 0,
+            transform:  visible ? "translateY(0)" : "translateY(32px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 150ms",
+          }}
         >
           {/* LEFT — Little Flock */}
           <div>
             <div className="mb-5">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#00A896]/30 bg-[#00A896]/8 px-3 py-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">Little Flock</span>
+              <div
+                className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1"
+                style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.08)" }}
+              >
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#4A7B8C" }}>Little Flock</span>
               </div>
-              <p className="text-[15px] font-bold text-[#0D2B4E] mb-1">Studio parisien de produits SaaS dédiés au transport & à la conformité</p>
-              <p className="text-[13px] text-[#4A5A72] mb-3">ClearGo est le premier produit du studio. D'autres suivront pour d'autres verticales transport.</p>
+              <p className="text-[15px] font-bold mb-1" style={{ color: "#1C2B35" }}>Studio parisien de produits SaaS dédiés au transport & à la conformité</p>
+              <p className="text-[13px] mb-3" style={{ color: "#5E7485" }}>ClearGo est le premier produit du studio. D'autres suivront pour d'autres verticales transport.</p>
               <ul className="space-y-2">
                 {[
                   "50+ projets terrain communs — Eurotranspharma, leader EU transport pharmaceutique",
                   "Rencontrés chez Eurotranspharma — 15 ans compliance, 20 ans transport",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-[14px] text-[#4A5A72]">
-                    <span className="text-[#00A896] font-bold flex-shrink-0 mt-0.5">•</span>
+                  <li key={item} className="flex items-start gap-2 text-[14px]" style={{ color: "#5E7485" }}>
+                    <span className="font-bold flex-shrink-0 mt-0.5" style={{ color: "#4A7B8C" }}>•</span>
                     {item}
                   </li>
                 ))}
@@ -103,14 +115,18 @@ export function Team() {
               {PRODUCTS.map((p) => (
                 <div
                   key={p.name}
-                  className="flex items-center gap-3 rounded-xl border border-[#DDE4F0] bg-[#F8FAFC] px-4 py-3"
+                  className="flex items-center gap-3 rounded-xl border px-4 py-3"
+                  style={{ borderColor: "#D5DFE5", background: "#F5F7F8" }}
                 >
                   <span className="text-xl">{p.emoji}</span>
                   <div className="flex-1">
-                    <span className="font-bold text-[#0D2B4E] text-[14px]">{p.name}</span>
-                    <span className="text-[12px] text-[#4A5A72] ml-2">— {p.desc}</span>
+                    <span className="font-bold text-[14px]" style={{ color: "#1C2B35" }}>{p.name}</span>
+                    <span className="text-[12px] ml-2" style={{ color: "#5E7485" }}>— {p.desc}</span>
                   </div>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${p.statusColor}`}>
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                    style={p.statusStyle}
+                  >
                     {p.status}
                   </span>
                 </div>
@@ -121,14 +137,17 @@ export function Team() {
           {/* RIGHT — Founders */}
           <div className="flex flex-col gap-4">
             {/* Vivien */}
-            <div className="rounded-2xl border-2 border-[#DDE4F0] p-6">
+            <div className="rounded-2xl border-2 p-6" style={{ borderColor: "#D5DFE5" }}>
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#0D2B4E] font-black text-lg text-white">
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full font-black text-lg text-white"
+                  style={{ background: "#1C2B35" }}
+                >
                   V
                 </div>
                 <div>
-                  <div className="font-black text-[#0D2B4E] text-base">Vivien</div>
-                  <div className="text-[#00A896] text-[12px] font-semibold">
+                  <div className="font-black text-base" style={{ color: "#1C2B35" }}>Vivien</div>
+                  <div className="text-[12px] font-semibold" style={{ color: "#4A7B8C" }}>
                     Co-fondateur — Produit & Compliance
                   </div>
                 </div>
@@ -140,8 +159,8 @@ export function Team() {
                   "15 ans terrain transport pharma & multi-sectoriel",
                   "Fondateur VYXO Consulting",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-[13px] text-[#4A5A72]">
-                    <span className="text-[#00A896] font-bold flex-shrink-0">•</span>
+                  <li key={item} className="flex items-start gap-2 text-[13px]" style={{ color: "#5E7485" }}>
+                    <span className="font-bold flex-shrink-0" style={{ color: "#4A7B8C" }}>•</span>
                     {item}
                   </li>
                 ))}
@@ -149,14 +168,17 @@ export function Team() {
             </div>
 
             {/* Wyssam */}
-            <div className="rounded-2xl border-2 border-[#DDE4F0] p-6">
+            <div className="rounded-2xl border-2 p-6" style={{ borderColor: "#D5DFE5" }}>
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#0D2B4E] font-black text-lg text-white">
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full font-black text-lg text-white"
+                  style={{ background: "#1C2B35" }}
+                >
                   W
                 </div>
                 <div>
-                  <div className="font-black text-[#0D2B4E] text-base">Wyssam</div>
-                  <div className="text-[#00A896] text-[12px] font-semibold">
+                  <div className="font-black text-base" style={{ color: "#1C2B35" }}>Wyssam</div>
+                  <div className="text-[12px] font-semibold" style={{ color: "#4A7B8C" }}>
                     Co-fondateur — Métier & Réseau
                   </div>
                 </div>
@@ -168,8 +190,8 @@ export function Team() {
                   "Vision terrain du problème ClearGo adresse",
                   "Fondateur ArtTrans — événementiel & cinéma",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-[13px] text-[#4A5A72]">
-                    <span className="text-[#00A896] font-bold flex-shrink-0">•</span>
+                  <li key={item} className="flex items-start gap-2 text-[13px]" style={{ color: "#5E7485" }}>
+                    <span className="font-bold flex-shrink-0" style={{ color: "#4A7B8C" }}>•</span>
                     {item}
                   </li>
                 ))}

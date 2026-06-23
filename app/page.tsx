@@ -6,8 +6,6 @@ import { Hero } from "@/components/landing/hero"
 import { Problems } from "@/components/landing/problems"
 import { Solution } from "@/components/landing/solution"
 import { Parcours } from "@/components/landing/parcours"
-import { Pricing } from "@/components/landing/pricing"
-import { AbonnementSection } from "@/components/landing/abonnement-section"
 import { Market } from "@/components/landing/market"
 import { Certificate } from "@/components/landing/certificate"
 import { Team } from "@/components/landing/team"
@@ -37,8 +35,6 @@ function LandingContent() {
       <Certificate />
       <TransformationCarousel onCta={openFunnel} />
       <Parcours onCta={openFunnel} />
-      <Pricing onCta={openFunnel} />
-      <AbonnementSection />
       <Market />
       <Team />
       <CtaFinal onCta={openFunnel} />

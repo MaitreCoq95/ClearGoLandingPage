@@ -5,7 +5,7 @@ import Image from "next/image"
 
 export function Footer() {
   return (
-    <footer className="bg-[#081B32]">
+    <footer style={{ background: "#1C2B35" }}>
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
 
         {/* 3-column grid */}
@@ -54,9 +54,9 @@ export function Footer() {
             </p>
             <ul className="space-y-2.5">
               {[
-                { label: "Diagnostic", href: "#pricing" },
-                { label: "Tarifs", href: "#pricing" },
-                { label: "Parcours", href: "#parcours" },
+                { label: "Comment ça marche", href: "#parcours" },
+                { label: "Le diagnostic", href: "#transformation" },
+                { label: "Le certificate", href: "#certificate" },
                 { label: "À propos", href: "#team" },
                 { label: "Contact", href: "#contact" },
               ].map((link) => (
@@ -139,8 +139,11 @@ export function Footer() {
             </button>
           </div>
 
-          <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/15 px-3.5 py-1.5 text-[11px] font-bold text-yellow-400">
-            ★ SITL 2026
+          <div
+            className="rounded-lg px-3.5 py-1.5 text-[11px] font-bold"
+            style={{ background: "rgba(74,123,140,0.2)", color: "#6AABB8", border: "1px solid rgba(74,123,140,0.3)" }}
+          >
+            ClearGo · Transport & Compliance
           </div>
         </div>
       </div>

@@ -23,14 +23,18 @@ export function StickyMobileCta({ onCta }: StickyMobileCtaProps) {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex h-[60px] items-center justify-between gap-3 bg-[#0D2B4E] px-4 lg:hidden">
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 flex h-[60px] items-center justify-between gap-3 px-4 lg:hidden"
+      style={{ background: "#1C2B35" }}
+    >
       <span className="text-[12px] font-semibold text-white/70">
-        50 accès fondateurs SITL · Offre limitée
+        Identification SIRET · Gratuit · Sans engagement
       </span>
       <button
         onClick={onCta}
         data-cta
-        className="flex-shrink-0 rounded-lg bg-[#00A896] px-4 py-2 text-[13px] font-bold text-white transition-all active:scale-95"
+        className="flex-shrink-0 rounded-lg px-4 py-2 text-[13px] font-bold text-white transition-all active:scale-95"
+        style={{ background: "#4A7B8C" }}
       >
         Démarrer →
       </button>

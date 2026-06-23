@@ -4,58 +4,67 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #F8FAFC;
-  --foreground: #0D1B2A;
-  --card: #FFFFFF;
-  --card-foreground: #0D1B2A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0D1B2A;
-  --primary: #0D2B4E;
+  /* ── Backgrounds ─────────────────────────────────────────────────────────── */
+  --bg0: #FAFBFC;
+  --bg1: #F5F7F8;
+  --bg2: #EEF2F4;
+  --bg3: #E8EEF1;
+
+  /* ── Text ────────────────────────────────────────────────────────────────── */
+  --t1: #1C2B35;
+  --t2: #3A4E5A;
+  --t3: #5E7485;
+  --t4: #8FA4B2;
+  --t5: #B5C5CF;
+
+  /* ── Brand ───────────────────────────────────────────────────────────────── */
+  --blue:       #4A7B8C;
+  --blue-hover: #3d6a7a;
+  --blue-l:     #6AABB8;
+  --blue-xl:    #A8C8D4;
+  --blue-bg:    #EEF2F4;
+  --copper:     #A87055;
+  --copper-hover: #935f44;
+  --green:      #5E9E80;
+
+  /* ── Lines ───────────────────────────────────────────────────────────────── */
+  --line:   #D5DFE5;
+  --line-l: #ECF1F4;
+
+  /* ── shadcn/ui tokens ────────────────────────────────────────────────────── */
+  --background: var(--bg0);
+  --foreground:  var(--t1);
+  --card:        #FFFFFF;
+  --card-foreground: var(--t1);
+  --popover:     #FFFFFF;
+  --popover-foreground: var(--t1);
+  --primary:     var(--blue);
   --primary-foreground: #FFFFFF;
-  --secondary: #F0F4F8;
-  --secondary-foreground: #0D1B2A;
-  --muted: #F0F4F8;
-  --muted-foreground: #4A5A72;
-  --accent: #00A896;
+  --secondary:   var(--bg1);
+  --secondary-foreground: var(--t1);
+  --muted:       var(--bg1);
+  --muted-foreground: var(--t3);
+  --accent:      var(--blue);
   --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #0D2B4E;
-  --radius: 0.75rem;
+  --border:      var(--line);
+  --input:       var(--line);
+  --ring:        var(--blue);
+  --radius:      0.625rem;
 
-  /* Brand tokens */
-  --navy:       #0D2B4E;
-  --navy-dark:  #081B32;
-  --navy-light: #1A4A7A;
-  --teal:       #00A896;
-  --teal-hover: #008F7E;
-  --teal-light: #E6F7F5;
-  --off-white:  #F8FAFC;
-  --section-alt:#F0F4F8;
-  --text-secondary: #4A5A72;
-  --text-tertiary:  #94A3B8;
-  --border-light: #E2E8F0;
-
-  /* Backward compat */
-  --green:       #00A896;
-  --green-hover: #008F7E;
-  --green-light: #E6F7F5;
-  --navy-dark-old: #081B32;
-
-  /* Timing functions — Apple-grade */
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-enter:   cubic-bezier(0.0, 0.0, 0.2, 1);
-  --ease-exit:    cubic-bezier(0.4, 0.0, 1, 1);
-  --ease-apple:   cubic-bezier(0.25, 0.1, 0.25, 1);
+  /* ── Timing functions ────────────────────────────────────────────────────── */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter:  cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-apple:  cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 @theme inline {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans:  'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-serif: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono:  'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -88,13 +97,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: #00A896;
+    background: #4A7B8C;
     color: white;
   }
 }
@@ -109,62 +118,50 @@ html {
   from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
 @keyframes scaleUp {
   from { opacity: 0; transform: scale(0.92) translateY(16px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
-
 @keyframes slideRight {
   from { opacity: 0; transform: translateX(-24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes slideLeft {
   from { opacity: 0; transform: translateX(24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes slideDownModal {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.35; transform: scale(1.7); }
 }
-
 @keyframes ticker {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
-
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
-
 @keyframes score-ring {
   from { stroke-dashoffset: 502; }
   to   { stroke-dashoffset: var(--ring-offset); }
 }
-
 @keyframes countUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes shimmer {
   0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
@@ -172,13 +169,18 @@ html {
 
 /* ── Utility classes ────────────────────────────────────────────────────── */
 
-.teal-stripe {
-  height: 4px;
-  background: #00A896;
+.blue-stripe {
+  height: 3px;
+  background: #4A7B8C;
   width: 100%;
 }
 
-/* Smooth reveal — apply via JS intersection observer */
+.teal-stripe {
+  height: 3px;
+  background: #4A7B8C;
+  width: 100%;
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -189,46 +191,49 @@ html {
   transform: translateY(0);
 }
 
-/* Button tactile press */
 .btn-press {
   transition: transform 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-smooth);
 }
 .btn-press:hover  { transform: translateY(-2px); }
 .btn-press:active { transform: translateY(0) scale(0.97); }
 
-/* Card hover lift */
 .card-lift {
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-smooth);
 }
 .card-lift:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 60px -12px rgba(13, 43, 78, 0.15);
+  box-shadow: 0 20px 60px -12px rgba(74, 123, 140, 0.12);
 }
 
-/* Gradient text */
-.text-gradient-teal {
-  background: linear-gradient(135deg, #00A896 0%, #00C9B1 100%);
+.text-gradient-blue {
+  background: linear-gradient(135deg, #4A7B8C 0%, #6AABB8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Section label style */
 .section-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #00A896;
+  color: #4A7B8C;
 }
 .section-eyebrow::before {
   content: '';
   display: block;
-  width: 16px;
+  width: 14px;
   height: 2px;
-  background: #00A896;
+  background: #4A7B8C;
   border-radius: 2px;
+}
+
+.section-eyebrow--copper {
+  color: #A87055;
+}
+.section-eyebrow--copper::before {
+  background: #A87055;
 }
