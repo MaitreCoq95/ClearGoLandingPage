@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 
 const navLinks = [
   { href: "#solution",       label: "Solution" },
@@ -26,34 +25,9 @@ export function Navbar({ onCta }: NavbarProps) {
 
   return (
     <>
-      {/* SITL top banner */}
-      <div className="fixed top-0 left-0 right-0 z-[60]" style={{ background: "#1C2B35" }}>
-        <div className="mx-auto flex h-11 max-w-7xl items-center justify-center gap-4 px-5 text-center lg:h-12">
-          <div className="overflow-hidden rounded-md flex-shrink-0" style={{ width: 200, height: 30 }}>
-            <Image
-              src="/images/sitl-badge.jpg"
-              alt="Start-up Contest SITL 2026 — Nominé"
-              width={1300}
-              height={200}
-              className="h-full w-full object-cover object-left"
-              priority
-            />
-          </div>
-          <span className="font-sans text-[12px] font-medium text-white/60 hidden sm:block">
-            31 mars – 2 avril 2026 · Paris Nord Villepinte
-          </span>
-          <button
-            onClick={onCta}
-            className="hidden rounded-md border border-white/20 px-3.5 py-1 font-sans text-[11px] font-semibold text-white/80 transition-colors hover:border-white/40 hover:text-white lg:inline-block"
-          >
-            Démarrer gratuitement →
-          </button>
-        </div>
-      </div>
-
       {/* Navbar */}
       <nav
-        className={`fixed top-11 left-0 right-0 z-50 transition-all duration-300 lg:top-12 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-white/96 backdrop-blur-lg border-b border-[#D5DFE5] shadow-sm"
             : "bg-[#FAFBFC]/80 backdrop-blur-sm"
