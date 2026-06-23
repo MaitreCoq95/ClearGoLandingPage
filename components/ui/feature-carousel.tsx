@@ -147,12 +147,12 @@ export const FeatureCarousel = React.forwardRef<HTMLDivElement, FeatureCarouselP
         {/* Header */}
         <div className="mb-12 text-center">
           <h2
-            className="font-black text-white"
-            style={{ fontSize: 'clamp(28px, 4vw, 48px)', letterSpacing: '-2px', lineHeight: 1.08 }}
+            className="font-black"
+            style={{ fontSize: 'clamp(28px, 4vw, 48px)', letterSpacing: '-2px', lineHeight: 1.08, color: '#1C2B35' }}
           >
             {title}
           </h2>
-          <p className="mt-3 text-[15px] text-white/45">{subtitle}</p>
+          <p className="mt-3 text-[15px]" style={{ color: '#5E7485' }}>{subtitle}</p>
         </div>
 
         {/* Progress dots */}
@@ -169,7 +169,7 @@ export const FeatureCarousel = React.forwardRef<HTMLDivElement, FeatureCarouselP
                 style={{
                   width: i === currentIndex ? 28 : 8,
                   height: 8,
-                  background: i === currentIndex ? slide.accent : 'rgba(255,255,255,0.15)',
+                  background: i === currentIndex ? slide.accent : '#B5C5CF',
                 }}
               />
             </button>
