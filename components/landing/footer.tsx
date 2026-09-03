@@ -1,149 +1,111 @@
-"use client"
+'use client'
 
-import Link from "next/link"
-import Image from "next/image"
+import Link from 'next/link'
+import { ClearGoIcon } from '@/components/icons/cleargo-icon'
+import { CONTACT_EMAIL, ESPACE_CLEARGO_URL } from '@/config/site-links'
+
+const NAV = [
+  { href: '/comment-ca-marche', label: 'Comment ça marche' },
+  { href: '/#referentiels', label: 'Référentiels' },
+  { href: '/#inscription', label: 'Contact' },
+]
+
+const LEGAL = [
+  { href: '/mentions-legales', label: 'Mentions légales' },
+  { href: '/politique-confidentialite', label: 'Politique de confidentialité' },
+  { href: '/politique-cookies', label: 'Cookies' },
+]
 
 export function Footer() {
   return (
-    <footer style={{ background: "#1C2B35" }}>
-      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
+    <footer style={{ background: 'var(--cleargo-navy)' }}>
+      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-12">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
 
-        {/* 3-column grid */}
-        <div className="grid gap-10 md:grid-cols-3">
-
-          {/* Col 1 — Brand */}
+          {/* Marque */}
           <div>
-            {/* Video logo */}
-            <div className="overflow-hidden rounded-xl w-[200px] h-[70px] mb-3">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-                aria-label="ClearGo"
-              >
+            <div className="h-11 w-[180px] overflow-hidden rounded-lg">
+              <video autoPlay loop muted playsInline className="h-full w-full object-cover" aria-hidden="true">
                 <source
                   src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/VideoHeroLogo-ric3FQikb28mJ4nhqJHFkPpijnJAaG.mp4"
                   type="video/mp4"
                 />
               </video>
             </div>
-            <p className="text-[13px] text-white/50 leading-relaxed">
-              Compliance & Transport
-            </p>
-            {/* Little Flock logo */}
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Un produit</p>
-              <div className="inline-block rounded-xl bg-white px-3 py-2 opacity-80 hover:opacity-100 transition-opacity">
-                <Image
-                  src="/images/little-flock-logo.png"
-                  alt="Little Flock"
-                  width={130}
-                  height={40}
-                  className="object-contain"
-                />
-              </div>
+            <div className="mt-4 flex items-center gap-2.5">
+              <ClearGoIcon name="reglo" size={28} className="shrink-0" />
+              <p className="text-[12.5px] text-white/45">
+                L’évaluation de conformité des transporteurs routiers.
+              </p>
             </div>
           </div>
 
-          {/* Col 2 — Links */}
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/30 mb-4">
+          {/* Navigation */}
+          <nav aria-label="Pied de page">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-white/35">
               Navigation
             </p>
-            <ul className="space-y-2.5">
-              {[
-                { label: "Comment ça marche", href: "#parcours" },
-                { label: "Le diagnostic", href: "#transformation" },
-                { label: "Le certificate", href: "#certificate" },
-                { label: "À propos", href: "#team" },
-                { label: "Contact", href: "#contact" },
-              ].map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-[14px] text-white/50 hover:text-white transition-colors"
-                  >
+            <ul className="flex flex-col gap-2.5">
+              {NAV.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-[14px] text-white/60 transition-colors hover:text-white">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
+              <li>
+                {ESPACE_CLEARGO_URL ? (
+                  <a
+                    href={ESPACE_CLEARGO_URL}
+                    className="text-[14px] text-white/60 transition-colors hover:text-white"
+                  >
+                    Se connecter
+                  </a>
+                ) : (
+                  // TODO: brancher sur l'espace ClearGo une fois l'application en ligne.
+                  <span className="text-[14px] text-white/25">Se connecter — bientôt</span>
+                )}
+              </li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Col 3 — Contact + badges */}
+          {/* Contact */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/30 mb-4">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-white/35">
               Contact
             </p>
-            <div className="space-y-2 mb-5">
-              <a
-                href="mailto:contact@cleargo.fr"
-                className="flex items-center gap-2 text-[14px] text-white/50 hover:text-white transition-colors"
-              >
-                ✉ contact@cleargo.fr
-              </a>
-              <p className="text-[14px] text-white/50">cleargo.fr</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/60">
-                🔒 RGPD
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/60">
-                🛡 Données sécurisées
-              </span>
-            </div>
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-[14px] text-white/60 transition-colors hover:text-white"
+            >
+              {CONTACT_EMAIL}
+            </a>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="mt-10 h-px bg-white/5" />
+        <div className="mt-10 h-px" style={{ background: 'rgba(255,255,255,0.09)' }} />
 
-        {/* Bottom bar */}
         <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-[12px] text-white/25">
-            © 2026 Little Flock — ClearGo. Tous droits réservés.
-          </p>
-
+          <p className="text-[12px] text-white/30">© 2026 LittleFlock SAS</p>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <Link
-              href="/mentions-legales"
-              className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
-            >
-              Mentions Légales
-            </Link>
-            <span className="text-white/10">|</span>
-            <Link
-              href="/politique-cookies"
-              className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
-            >
-              Politique Cookies
-            </Link>
-            <span className="text-white/10">|</span>
-            <Link
-              href="/politique-confidentialite"
-              className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
-            >
-              Politique de Confidentialité RGPD
-            </Link>
-            <span className="text-white/10">|</span>
+            {LEGAL.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-[12px] text-white/30 underline underline-offset-2 transition-colors hover:text-white/60"
+              >
+                {link.label}
+              </Link>
+            ))}
             <button
               onClick={() => {
-                localStorage.removeItem("cleargo-cookie-consent")
+                localStorage.removeItem('cleargo-cookie-consent')
                 window.location.reload()
               }}
-              className="text-[12px] text-white/30 underline underline-offset-2 hover:text-white/60 transition-colors"
+              className="text-[12px] text-white/30 underline underline-offset-2 transition-colors hover:text-white/60"
             >
               Gestion des cookies
             </button>
-          </div>
-
-          <div
-            className="rounded-lg px-3.5 py-1.5 text-[11px] font-bold"
-            style={{ background: "rgba(74,123,140,0.2)", color: "#6AABB8", border: "1px solid rgba(74,123,140,0.3)" }}
-          >
-            ClearGo · Transport & Compliance
           </div>
         </div>
       </div>

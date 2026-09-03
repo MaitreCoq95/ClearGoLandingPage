@@ -1,1391 +1,824 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { X, ChevronLeft, CheckCircle2, AlertTriangle, Zap, Target, Building2, Loader2 } from "lucide-react"
+import { useCallback, useEffect, useState } from 'react'
+import { ClearGoIcon } from '@/components/icons/cleargo-icon'
+import {
+  FUNNEL_QUESTIONS,
+  LICENCE_URGENCE_JOURS,
+  ROLE_TRANSPORT_CODES,
+  fleetBucketFromProxy,
+  mapUrgence,
+  parseFleetSize,
+} from '@/config/funnel-questions'
+import {
+  CALENDLY_URL,
+  ESPACE_CLEARGO_URL,
+  GUIDE_CONFORMITE_URL,
+  WEBINAIRE_DATE,
+  WEBINAIRE_URL,
+} from '@/config/site-links'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ── Chrome SVG (aucune librairie d'icônes externe) ──────────────────────────
 
-type Answers = Record<string, string>
+const IconClose = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+)
+const IconBack = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <path d="M12 4L6 10l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const IconCheck = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const Spinner = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="animate-spin">
+    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity=".25" />
+    <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
 
-interface SiretData {
-  nom: string
-  siren: string
-  siret: string
-  adresse: string
-  ville: string
-  codePostal: string
-  naf: string
-  libelleNaf: string
-  effectif: string
-  dateCreation: string
-  formeJuridique: string
-  isTransport: boolean
+// ── SIRET ───────────────────────────────────────────────────────────────────
+
+/** Masque de saisie 3-3-3-5 : 424 644 201 00032 */
+function formatSiret(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 14)
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 14)].filter(Boolean).join(' ')
 }
 
-const EFFECTIF_LABELS: Record<string, string> = {
-  "00": "Non employeur", "01": "1 à 2 salariés", "02": "3 à 5 salariés",
-  "03": "6 à 9 salariés", "11": "10 à 19 salariés", "12": "20 à 49 salariés",
-  "21": "50 à 99 salariés", "22": "100 à 199 salariés", "31": "200 à 249 salariés",
-  "32": "250 à 499 salariés", "41": "500 à 999 salariés", "42": "1 000 à 1 999 salariés",
-  "51": "2 000 à 4 999 salariés", "52": "5 000 à 9 999 salariés", "53": "10 000+ salariés",
-}
-
-const TRANSPORT_NAF = ["4941", "4942", "4939", "4932", "5229", "5210", "5224", "4931", "4950"]
-
-async function fetchSiretData(siret: string): Promise<SiretData | null> {
-  try {
-    const res = await fetch(
-      `https://recherche-entreprises.api.gouv.fr/search?q=${siret.replace(/\s/g, "")}&page=1&per_page=1`
-    )
-    if (!res.ok) return null
-    const data = await res.json()
-    const r = data.results?.[0]
-    if (!r) return null
-    const nafCode = (r.activite_principale ?? "").replace(".", "").slice(0, 4)
-    return {
-      nom:             r.nom_complet ?? "",
-      siren:           r.siren ?? "",
-      siret:           r.siege?.siret ?? siret,
-      adresse:         r.siege?.adresse ?? "",
-      ville:           r.siege?.commune ?? "",
-      codePostal:      r.siege?.code_postal ?? "",
-      naf:             r.activite_principale ?? "",
-      libelleNaf:      r.libelle_activite_principale?.naf ?? "",
-      effectif:        EFFECTIF_LABELS[r.tranche_effectif_salarie ?? ""] ?? "Non renseigné",
-      dateCreation:    r.date_creation
-        ? new Date(r.date_creation).toLocaleDateString("fr-FR", { year: "numeric", month: "long" })
-        : "",
-      formeJuridique:  r.nature_juridique ?? "",
-      isTransport:     TRANSPORT_NAF.some((c) => nafCode.startsWith(c)),
+/** Luhn — validation locale indicative, jamais bloquante côté serveur. */
+function isLuhnValid(siret: string): boolean {
+  if (siret.length !== 14) return false
+  let sum = 0
+  for (let i = 0; i < 14; i++) {
+    let n = Number(siret[13 - i])
+    if (i % 2 === 1) {
+      n *= 2
+      if (n > 9) n -= 9
     }
-  } catch {
-    return null
+    sum += n
   }
+  return sum % 10 === 0
 }
 
-interface Question {
-  id: string
-  type: "choice" | "open"
-  label: string
-  hint: string | null
-  options?: string[]
-  placeholder?: string
-  block: string
-  optional?: boolean
+interface RegistryData {
+  raison_sociale?: string
+  gestionnaire_transport?: string
+  commune?: string
+  departement?: string
+  licence_active?: boolean
+  fin_validite_lti?: string | null
+  fin_validite_lc?: string | null
+  jours_avant_expiration?: number | null
+  proxy_flotte?: number | null
 }
 
-interface Swot {
-  forces: string[]
-  faiblesses: string[]
-  opportunites: string[]
-  menaces: string[]
-}
+type SiretStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'unavailable'
 
-interface SynthesisData {
-  profilType: string
-  profilSub: string
-  pills: string[]
-  douleurs: string[]
-  urgence: 1 | 2 | 3
-  reco: string[]
-  citation: string
-  swot: Swot
-}
-
-// ─── Questions ───────────────────────────────────────────────────────────────
-
-const QUESTIONS: Question[] = [
-  // ── Bloc 1 : Votre profil ──────────────────────────────────────────────────
-  {
-    id: "role",
-    type: "choice",
-    block: "Votre profil",
-    label: "Quel est votre rôle dans l'entreprise ?",
-    hint: "Pour personnaliser votre diagnostic.",
-    options: [
-      "Dirigeant / Gérant",
-      "Responsable d'Exploitation",
-      "Responsable QSE / QHSE",
-      "Responsable Administratif",
-      "Associé / Co-fondateur",
-    ],
-  },
-  {
-    id: "structure",
-    type: "choice",
-    block: "Votre profil",
-    label: "Quel type de structure êtes-vous ?",
-    hint: null,
-    options: [
-      "Entreprise individuelle / auto-entrepreneur",
-      "Société familiale (2e génération+)",
-      "PME en croissance",
-      "Groupe / multi-sites",
-    ],
-  },
-  {
-    id: "phase",
-    type: "choice",
-    block: "Votre profil",
-    label: "Où en est votre entreprise aujourd'hui ?",
-    hint: "Soyez honnête — ça aide à calibrer le bon accompagnement.",
-    options: [
-      "Démarrage — je saisis une opportunité de marché",
-      "Croissance rapide — j'ai du mal à tout structurer",
-      "Consolidation — je veux professionnaliser",
-      "Restructuration — je dois remettre de l'ordre",
-    ],
-  },
-
-  // ── Bloc 2 : Votre activité ────────────────────────────────────────────────
-  {
-    id: "activite",
-    type: "choice",
-    block: "Votre activité",
-    label: "Quel type de transport exercez-vous ?",
-    hint: "Chaque activité a ses propres obligations réglementaires.",
-    options: [
-      "Transport général (TRM)",
-      "Température dirigée",
-      "Pharma / GDP",
-      "ADR — Matières dangereuses",
-      "Messagerie / Colis / DSP e-commerce",
-    ],
-  },
-  {
-    id: "clients",
-    type: "choice",
-    block: "Votre activité",
-    label: "Qui sont vos principaux clients ?",
-    hint: "Les exigences varient fortement selon le type de donneur d'ordre.",
-    options: [
-      "Grands comptes / donneurs d'ordre structurés",
-      "E-commerce / DSP (Amazon, Cdiscount…)",
-      "Clients pharmaceutiques / Healthcare",
-      "Industrie / B2B",
-      "Clientèle mixte",
-    ],
-  },
-  {
-    id: "flotte",
-    type: "choice",
-    block: "Votre activité",
-    label: "Quelle est la taille de votre flotte ?",
-    hint: "Chaque véhicule est un point de contrôle.",
-    options: ["1 à 5 véhicules", "6 à 20 véhicules", "21 à 50 véhicules", "50+ véhicules"],
-  },
-  {
-    id: "conducteurs",
-    type: "choice",
-    block: "Votre activité",
-    label: "Combien de conducteurs gérez-vous ?",
-    hint: "FCO, FIMO, aptitudes médicales — c'est là que tout commence.",
-    options: ["1 à 5", "6 à 20", "21 à 50", "50+"],
-  },
-
-  // ── Bloc 3 : Vos douleurs ──────────────────────────────────────────────────
-  {
-    id: "controle",
-    type: "choice",
-    block: "Vos douleurs",
-    label: "Avez-vous déjà eu un contrôle DRIEAT ou DREAL ?",
-    hint: null,
-    options: [
-      "Non, jamais",
-      "Oui, sans problème",
-      "Oui, avec des sanctions",
-      "Un contrôle est prévu dans les 6 mois",
-    ],
-  },
-  {
-    id: "contratPerdu",
-    type: "choice",
-    block: "Vos douleurs",
-    label: "Avez-vous déjà perdu un contrat faute de prouver votre conformité ?",
-    hint: null,
-    options: [
-      "Oui, ça m'est arrivé",
-      "Non, mais je le crains",
-      "Non, pas mon problème",
-      "Je ne sais pas",
-    ],
-  },
-  {
-    id: "douleurLibre",
-    type: "open",
-    block: "Vos douleurs",
-    label: "Décrivez votre principal problème aujourd'hui.",
-    hint: "En quelques mots — qu'est-ce qui vous empêche de dormir la nuit côté conformité ?",
-    placeholder:
-      "Ex : je n'ai pas le temps de suivre les formations de mes chauffeurs, mes documents sont éparpillés partout...",
-  },
-
-  // ── Bloc 4 : Vos objectifs ─────────────────────────────────────────────────
-  {
-    id: "priorite",
-    type: "choice",
-    block: "Vos objectifs",
-    label: "Quelle est votre priorité n°1 aujourd'hui ?",
-    hint: null,
-    options: [
-      "Passer un audit sans stress",
-      "Décrocher de nouveaux appels d'offres",
-      "Obtenir une certification ISO ou GDP",
-      "Structurer ma conformité de A à Z",
-    ],
-  },
-  {
-    id: "frein",
-    type: "choice",
-    block: "Vos objectifs",
-    label: "Quel est votre principal frein pour avancer ?",
-    hint: null,
-    options: [
-      "Manque de temps",
-      "Budget limité",
-      "Manque de méthode — je ne sais pas par où commencer",
-      "Je gère seul, sans ressource dédiée",
-    ],
-  },
-  {
-    id: "declicLibre",
-    type: "open",
-    block: "Vos objectifs",
-    label: "Qu'est-ce qui vous a poussé à chercher une solution aujourd'hui ?",
-    hint: "Un événement déclencheur ? Une pression client ? Un audit difficile ?",
-    placeholder:
-      "Ex : j'ai failli perdre un gros client qui me demandait une preuve de conformité...",
-    optional: true,
-  },
-  {
-    id: "roi",
-    type: "choice",
-    block: "Vos objectifs",
-    label: "Qu'est-ce qui justifierait la démarche pour vous ?",
-    hint: "Ce qui compte vraiment au bout du compte.",
-    options: [
-      "Décrocher 1 nouveau contrat grâce à ma conformité",
-      "Éviter une sanction ou un audit raté",
-      "Gagner du temps sur la gestion documentaire",
-      "Valoriser mon entreprise auprès de mes clients actuels",
-    ],
-  },
-
-  // ── Bloc 5 : Votre organisation ────────────────────────────────────────────
-  {
-    id: "outils",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Comment gérez-vous votre conformité aujourd'hui ?",
-    hint: "Pour comprendre d'où vous partez.",
-    options: [
-      "Fichiers Excel / Google Sheets",
-      "Papier et classeurs physiques",
-      "Un logiciel dédié (ERP, TMS…)",
-      "Je ne gère pas vraiment — c'est le flou",
-    ],
-  },
-  {
-    id: "rse",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Avez-vous des engagements RSE ou environnementaux ?",
-    hint: "De plus en plus de donneurs d'ordre l'exigent — c'est aussi un levier de différenciation.",
-    options: [
-      "Oui, c'est une priorité stratégique pour nous",
-      "Oui, mais je ne sais pas comment les structurer ou documenter",
-      "C'est une attente de mes clients — je dois m'y mettre",
-      "Non, pas encore concerné",
-    ],
-  },
-  {
-    id: "securite",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Où en êtes-vous sur la sécurité au travail ?",
-    hint: "DUERP, ISO 45001, accidents du travail — un angle souvent négligé mais très contrôlé.",
-    options: [
-      "DUERP à jour et suivi régulièrement",
-      "DUERP existant mais pas mis à jour",
-      "Pas de DUERP formalisé — je dois m'y mettre",
-      "Je ne sais pas ce que c'est",
-    ],
-  },
-  {
-    id: "qse",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Avez-vous un responsable QSE en interne ?",
-    hint: "Pour calibrer l'accompagnement selon votre organisation.",
-    options: [
-      "Oui, une personne dédiée",
-      "Je partage la fonction",
-      "Je gère moi-même",
-      "Non, j'en ai besoin",
-    ],
-  },
-  {
-    id: "docsAJour",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Vos documents de conformité sont-ils à jour ?",
-    hint: null,
-    options: [
-      "Oui, complètement",
-      "Partiellement",
-      "Non, c'est désorganisé",
-      "Je ne sais pas évaluer",
-    ],
-  },
-  {
-    id: "delai",
-    type: "choice",
-    block: "Votre organisation",
-    label: "Dans quel délai avez-vous besoin de résultats ?",
-    hint: null,
-    options: [
-      "Dans le mois — c'est urgent",
-      "1 à 3 mois",
-      "3 à 6 mois",
-      "Plus de 6 mois",
-    ],
-  },
-]
-
-const TOTAL = QUESTIONS.length
-
-// ─── Synthesis generator ──────────────────────────────────────────────────────
-
-function generateSynthesis(answers: Answers): SynthesisData {
-  const role      = answers.role      ?? ""
-  const phase     = answers.phase     ?? ""
-  const structure = answers.structure ?? ""
-
-  let profilType = "Professionnel du transport"
-  let profilSub  = "En quête de structuration et de visibilité"
-
-  if (role.includes("Dirigeant")) {
-    if (phase.includes("Croissance rapide")) {
-      profilType = "Dirigeant en croissance rapide"
-      profilSub  = "Saisit les opportunités — la structure doit suivre"
-    } else if (structure.includes("familiale")) {
-      profilType = "Dirigeant d'entreprise familiale"
-      profilSub  = "Pérenniser et professionnaliser l'héritage"
-    } else {
-      profilType = "Dirigeant-exploitant"
-      profilSub  = "Opérationnel et stratège à la fois"
-    }
-  } else if (role.includes("Exploitation")) {
-    profilType = "Responsable d'Exploitation"
-    profilSub  = structure.includes("familiale")
-      ? "Modernise sans remettre en cause l'existant"
-      : "Pilote du quotidien opérationnel"
-  } else if (role.includes("QSE")) {
-    profilType = "Responsable QSE / QHSE"
-    profilSub  = "Garant de la conformité et des certifications"
-  } else if (role.includes("Administratif")) {
-    profilType = "Responsable Administratif"
-    profilSub  = "Centralise et structure les obligations réglementaires"
-  } else if (role.includes("Associé")) {
-    profilType = "Associé / Co-fondateur"
-    profilSub  = "Vision long terme et structuration de la croissance"
-  }
-
-  const pills: string[] = []
-  if (answers.activite)    pills.push(answers.activite)
-  if (answers.clients)     pills.push(answers.clients)
-  if (answers.flotte)      pills.push(answers.flotte)
-  if (answers.conducteurs) pills.push(`${answers.conducteurs} conducteurs`)
-  if (answers.structure)   pills.push(answers.structure)
-  if (answers.phase)       pills.push(answers.phase.split("—")[0].trim())
-
-  const douleurs: string[] = []
-  if (answers.controle === "Un contrôle est prévu dans les 6 mois")
-    douleurs.push("Contrôle DRIEAT/DREAL imminent — préparation insuffisante")
-  if (answers.controle === "Oui, avec des sanctions")
-    douleurs.push("Antécédent de sanctions — surveillance renforcée probable")
-  if (answers.contratPerdu === "Oui, ça m'est arrivé")
-    douleurs.push("Perte de contrat avérée faute de preuve de conformité")
-  if (answers.contratPerdu === "Non, mais je le crains")
-    douleurs.push("Risque latent de perte de contrats clients")
-  if (answers.docsAJour === "Non, c'est désorganisé")
-    douleurs.push("Documents éparpillés — introuvables en cas de contrôle ou d'urgence")
-  if (answers.docsAJour === "Partiellement")
-    douleurs.push("Conformité incomplète — des zones grises non traitées")
-  if (answers.docsAJour === "Je ne sais pas évaluer")
-    douleurs.push("Visibilité nulle sur le niveau réel de conformité")
-  if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre")
-    douleurs.push("DUERP absent — non-conformité légale, risque de sanction à l'Inspection du Travail")
-  if (answers.securite === "DUERP existant mais pas mis à jour")
-    douleurs.push("DUERP obsolète — non conforme aux obligations de mise à jour annuelle")
-  if (answers.securite === "Je ne sais pas ce que c'est")
-    douleurs.push("Sécurité au travail non couverte — risque légal et humain majeur")
-  if (answers.frein === "Manque de temps")
-    douleurs.push("Conformité reléguée au second plan par manque de temps")
-  if (answers.frein?.includes("seul"))
-    douleurs.push("Gestion en solo — aucune ressource dédiée à la conformité")
-  if (answers.frein === "Budget limité")
-    douleurs.push("Contrainte budgétaire — risque de sous-investissement sur la conformité")
-  if (answers.frein?.includes("méthode"))
-    douleurs.push("Absence de méthode — ne sait pas par où commencer")
-  if (answers.qse === "Non, j'en ai besoin")
-    douleurs.push("Aucune compétence QSE internalisée")
-  if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
-    douleurs.push("Aucun suivi de conformité en place — exposition invisible mais réelle")
-  if (answers.outils === "Papier et classeurs physiques")
-    douleurs.push("Gestion 100% papier — impossible à partager, auditer ou mettre à jour")
-  if (phase.includes("Croissance rapide"))
-    douleurs.push("Croissance rapide non accompagnée d'une structuration réglementaire")
-  if (phase.includes("Restructuration"))
-    douleurs.push("Phase de restructuration — remise en ordre réglementaire urgente")
-  if (douleurs.length === 0)
-    douleurs.push("Besoin de visibilité objective sur le niveau de conformité")
-
-  let urgence: 1 | 2 | 3 = 1
-  if (
-    answers.controle === "Un contrôle est prévu dans les 6 mois" ||
-    answers.delai === "Dans le mois — c'est urgent"
-  ) urgence = 3
-  else if (
-    answers.contratPerdu === "Oui, ça m'est arrivé" ||
-    answers.controle === "Oui, avec des sanctions" ||
-    answers.delai === "1 à 3 mois"
-  ) urgence = 2
-
-  const reco: string[] = []
-  if (urgence === 3)
-    reco.push("Diagnostic flash sous 48h — identifier les risques critiques immédiatement")
-  if (answers.priorite?.includes("audit"))
-    reco.push("Plan de préparation audit personnalisé + checklist des 20 points de contrôle clés")
-  if (answers.priorite?.includes("appels d'offres"))
-    reco.push("ClearGo Certificate — preuve vérifiable par QR code pour vos dossiers AO")
-  if (answers.priorite?.includes("certification"))
-    reco.push("Roadmap certification ISO / GDP structurée étape par étape")
-  if (answers.priorite?.includes("A à Z"))
-    reco.push("Audit complet 360° — couvrir tous les volets réglementaires de A à Z")
-  if (answers.activite === "Pharma / GDP" || answers.clients?.includes("pharmaceutiques"))
-    reco.push("Conformité GDP documentée avec audit trail complet")
-  if (answers.activite?.includes("Messagerie") || answers.clients?.includes("E-commerce"))
-    reco.push("Conformité DSP calibrée pour les exigences e-commerce (Amazon, Cdiscount…)")
-  if (answers.activite?.includes("ADR"))
-    reco.push("Dossier ADR structuré — formations, équipements et documents en règle")
-  if (answers.activite?.includes("Température"))
-    reco.push("Traçabilité température — conformité ATP et chaîne du froid documentée")
-  if (answers.clients?.includes("Grands comptes"))
-    reco.push("Profil ClearGo partageable — répondez aux due diligences grands comptes en 1 lien")
-  if (answers.docsAJour === "Non, c'est désorganisé")
-    reco.push("Centralisation documentaire complète — tout au même endroit, mis à jour en temps réel")
-  if (answers.docsAJour === "Je ne sais pas évaluer")
-    reco.push("Audit documentaire initial — cartographie exacte de ce qui manque")
-  if (answers.qse === "Non, j'en ai besoin" || answers.frein?.includes("seul"))
-    reco.push("Accompagnement complet — ClearGo agit comme votre QSE externalisé")
-  if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
-    reco.push("Module RSE & ISO 14001 — documentez et valorisez vos engagements environnementaux")
-  if (answers.rse === "Oui, mais je ne sais pas comment les structurer ou documenter")
-    reco.push("Structuration RSE clé en main — transformez vos pratiques en preuves documentées")
-  if (answers.rse === "C'est une attente de mes clients — je dois m'y mettre")
-    reco.push("Conformité RSE express — répondez aux exigences clients sans délai")
-  if (answers.securite === "Pas de DUERP formalisé — je dois m'y mettre" || answers.securite === "Je ne sais pas ce que c'est")
-    reco.push("DUERP clé en main — évaluation des risques professionnels conforme ISO 45001")
-  if (answers.securite === "DUERP existant mais pas mis à jour")
-    reco.push("Mise à jour DUERP + plan de prévention — remise en conformité rapide")
-  if (answers.roi === "Décrocher 1 nouveau contrat grâce à ma conformité")
-    reco.push("Trust Score 0-1000 + Certificate — argument commercial concret face aux donneurs d'ordre")
-  if (answers.roi === "Éviter une sanction ou un audit raté")
-    reco.push("Monitoring temps réel — savoir exactement où vous en êtes avant tout contrôle")
-  if (answers.roi === "Gagner du temps sur la gestion documentaire")
-    reco.push("Automatisation documentaire — fini les heures perdues à chercher un document")
-  if (answers.roi === "Valoriser mon entreprise auprès de mes clients actuels")
-    reco.push("Profil de confiance ClearGo — partageable en 1 lien, vérifiable par vos clients")
-  if (answers.outils === "Je ne gère pas vraiment — c'est le flou" || answers.outils === "Papier et classeurs physiques")
-    reco.push("Migration documentaire complète — on part de zéro et on structure tout ensemble")
-  if (answers.outils === "Fichiers Excel / Google Sheets")
-    reco.push("Remplacement Excel — plateforme dédiée, collaborative, mise à jour en temps réel")
-  if (reco.length < 2) reco.push("Trust Score 0-1000 — mesurer objectivement votre niveau de conformité")
-  if (reco.length < 3) reco.push("Plan d'action personnalisé avec priorisation des actions à fort impact")
-
-  let citation = `"Je veux savoir où j'en suis vraiment, et agir sur ce qui compte."`
-  if (urgence === 3)
-    citation = `"J'ai besoin de résultats vite — je ne peux pas me permettre d'attendre."`
-  else if (answers.contratPerdu === "Oui, ça m'est arrivé")
-    citation = `"Ça ne doit plus se reproduire. Je veux prouver ma fiabilité à n'importe qui."`
-  else if (answers.priorite?.includes("appels d'offres"))
-    citation = `"Je veux décrocher de nouveaux contrats — mais il me faut les bonnes preuves."`
-  else if (answers.priorite?.includes("certification"))
-    citation = `"Je veux une certification, mais je ne sais pas par où commencer concrètement."`
-  else if (answers.outils === "Je ne gère pas vraiment — c'est le flou")
-    citation = `"Je sais que je dois m'organiser. Je ne sais juste pas par où attaquer."`
-
-  const forces: string[] = []
-  if (answers.docsAJour === "Oui, complètement")
-    forces.push("Documents de conformité à jour et bien organisés")
-  if (answers.qse?.includes("dédiée"))
-    forces.push("Responsable QSE internalisé — expertise métier en place")
-  if (answers.controle === "Oui, sans problème")
-    forces.push("Historique de contrôles DRIEAT/DREAL positifs")
-  if (answers.securite === "DUERP à jour et suivi régulièrement")
-    forces.push("DUERP tenu à jour — bonne maîtrise de la sécurité au travail")
-  if (answers.rse === "Oui, c'est une priorité stratégique pour nous")
-    forces.push("Engagements RSE formalisés — levier de différenciation concret")
-  if (answers.outils?.includes("logiciel dédié"))
-    forces.push("Outil de gestion en place — base technique déjà existante")
-  if (answers.phase?.includes("Consolidation"))
-    forces.push("Volonté affirmée de professionnaliser — maturité de gestion")
-  if (answers.conducteurs?.includes("21") || answers.conducteurs?.includes("50+"))
-    forces.push("Structure de taille significative — crédibilité opérationnelle")
-  if (answers.controle === "Non, jamais")
-    forces.push("Aucun antécédent réglementaire — terrain vierge pour structurer")
-  if (forces.length === 0)
-    forces.push("Activité en exercice — expérience terrain solide")
-
-  const faiblesses: string[] = []
-  if (answers.docsAJour === "Non, c'est désorganisé")
-    faiblesses.push("Documents éparpillés — aucune centralisation ni traçabilité")
-  if (answers.docsAJour === "Partiellement")
-    faiblesses.push("Conformité incomplète — zones grises persistantes")
-  if (answers.docsAJour === "Je ne sais pas évaluer")
-    faiblesses.push("Niveau de conformité inconnu — pas de visibilité interne")
-  if (answers.qse === "Non, j'en ai besoin")
-    faiblesses.push("Aucune compétence QSE internalisée")
-  if (answers.qse === "Je gère moi-même")
-    faiblesses.push("QSE géré par le dirigeant — surcharge et risque d'oubli")
-  if (answers.securite?.includes("Pas de DUERP") || answers.securite === "Je ne sais pas ce que c'est")
-    faiblesses.push("DUERP absent — non-conformité légale sur la sécurité")
-  if (answers.securite === "DUERP existant mais pas mis à jour")
-    faiblesses.push("DUERP obsolète — non conforme à l'obligation de mise à jour")
-  if (answers.outils?.includes("flou") || answers.outils?.includes("Papier"))
-    faiblesses.push("Gestion de conformité non structurée — risque opérationnel élevé")
-  if (answers.outils?.includes("Excel"))
-    faiblesses.push("Excel — outil non traçable, non collaboratif, non auditable")
-  if (answers.frein?.includes("seul"))
-    faiblesses.push("Gestion solitaire — aucune ressource dédiée à la conformité")
-  if (answers.frein === "Manque de temps")
-    faiblesses.push("Conformité traitée en urgence — jamais en anticipation")
-  if (faiblesses.length === 0)
-    faiblesses.push("Processus internes à formaliser pour passer à l'échelle")
-
-  const opportunites: string[] = []
-  if (answers.priorite?.includes("appels d'offres"))
-    opportunites.push("Appels d'offres accessibles grâce à la preuve de conformité")
-  if (answers.priorite?.includes("certification"))
-    opportunites.push("Certification ISO/GDP — levier de crédibilité et d'accès à de nouveaux marchés")
-  if (answers.clients?.includes("Grands comptes"))
-    opportunites.push("Grands comptes — valeur ajoutée forte si conformité prouvée")
-  if (answers.clients?.includes("pharmaceutiques"))
-    opportunites.push("Marché pharma — conformité GDP = accès à un segment premium")
-  if (answers.clients?.includes("E-commerce"))
-    opportunites.push("Marché DSP e-commerce en forte croissance — différenciation par la conformité")
-  if (answers.rse !== "Non, pas encore concerné" && answers.rse)
-    opportunites.push("Démarche RSE — différenciation face à la concurrence et fidélisation clients")
-  if (answers.roi?.includes("Décrocher"))
-    opportunites.push("Conformité = argument commercial direct pour décrocher des contrats")
-  if (phase.includes("Croissance"))
-    opportunites.push("Dynamique de croissance — moment idéal pour structurer avant de scaler")
-  if (answers.activite === "Pharma / GDP")
-    opportunites.push("Spécialisation GDP — niche à forte valeur si conformité irréprochable")
-  if (opportunites.length === 0)
-    opportunites.push("Structuration de la conformité comme levier de croissance durable")
-
-  const menaces: string[] = []
-  if (answers.controle === "Un contrôle est prévu dans les 6 mois")
-    menaces.push("Contrôle DRIEAT/DREAL imminent — risque de sanction à court terme")
-  if (answers.controle === "Oui, avec des sanctions")
-    menaces.push("Antécédents de sanctions — probabilité de surveillance renforcée")
-  if (answers.contratPerdu === "Oui, ça m'est arrivé")
-    menaces.push("Risque de récidive de perte de contrat si rien ne change")
-  if (answers.contratPerdu === "Non, mais je le crains")
-    menaces.push("Pression croissante des donneurs d'ordre sur la preuve de conformité")
-  if (answers.securite?.includes("Pas") || answers.securite === "Je ne sais pas ce que c'est")
-    menaces.push("Risque Inspection du Travail — DUERP absent = infraction immédiate")
-  if (phase.includes("Croissance rapide"))
-    menaces.push("Croissance sans structure réglementaire = fragilité en cas de contrôle")
-  if (answers.frein === "Budget limité")
-    menaces.push("Sous-investissement en conformité — coût d'une sanction bien supérieur")
-  if (answers.clients?.includes("pharmaceutiques") || answers.activite === "Pharma / GDP")
-    menaces.push("Exigences GDP très strictes — non-conformité = exclusion immédiate du marché")
-  if (answers.activite?.includes("ADR"))
-    menaces.push("Réglementation ADR — risques humains et pénaux en cas de manquement")
-  if (menaces.length === 0)
-    menaces.push("Évolution réglementaire constante — veille active indispensable")
-
-  return {
-    profilType,
-    profilSub,
-    pills,
-    douleurs,
-    urgence,
-    reco,
-    citation,
-    swot: { forces, faiblesses, opportunites, menaces },
-  }
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Composant ───────────────────────────────────────────────────────────────
 
 interface PrequalFunnelProps {
   open: boolean
   onClose: () => void
+  /** SIRET déjà saisi ailleurs sur la page, repris tel quel à l'ouverture. */
+  initialSiret?: string
 }
 
-export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
-  const [siretPhase, setSiretPhase]   = useState(true)   // true = SIRET identification screen
-  const [step, setStep]               = useState(0)
-  const [answers, setAnswers]         = useState<Answers>({})
-  const [direction, setDirection]     = useState<"forward" | "back">("forward")
-  const [animating, setAnimating]     = useState(false)
-  const [prenom, setPrenom]           = useState("")
-  const [nom, setNom]                 = useState("")
-  const [societe, setSociete]         = useState("")
-  const [siret, setSiret]             = useState("")
-  const [siretData, setSiretData]     = useState<SiretData | null>(null)
-  const [siretLoading, setSiretLoading] = useState(false)
-  const [siretError, setSiretError]   = useState(false)
-  const [email, setEmail]             = useState("")
-  const [tel, setTel]                 = useState("")
-  const [sending, setSending]         = useState(false)
-  const [synthesis, setSynthesis]     = useState<SynthesisData | null>(null)
-  const textareaRef                   = useRef<HTMLTextAreaElement>(null)
+const TOTAL_Q = FUNNEL_QUESTIONS.length
 
-  const isDone    = !siretPhase && step === TOTAL + 1
-  const isContact = !siretPhase && step === TOTAL
-  const progress  = siretPhase ? 0 : isDone ? 100 : Math.round((step / (TOTAL + 1)) * 100)
+export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProps) {
+  // phase : 'siret' → 'questions' → 'contact' → 'sortie'
+  const [phase, setPhase] = useState<'siret' | 'questions' | 'contact' | 'sortie'>('siret')
+  const [step, setStep] = useState(0)
 
-  const currentQ      = !siretPhase && step < QUESTIONS.length ? QUESTIONS[step] : null
-  const currentAnswer = currentQ ? (answers[currentQ.id] ?? "") : ""
+  const [siret, setSiret] = useState('')
+  const [siretStatus, setSiretStatus] = useState<SiretStatus>('idle')
+  const [registry, setRegistry] = useState<RegistryData | null>(null)
 
-  // Lock scroll
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
+  const [email, setEmail] = useState('')
+  const [prenom, setPrenom] = useState('')
+  const [telephone, setTelephone] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(false)
+
+  const digits = siret.replace(/\D/g, '')
+  const joursAvantExpiration = registry?.jours_avant_expiration ?? null
+  const licenceUrgente =
+    joursAvantExpiration !== null && joursAvantExpiration < LICENCE_URGENCE_JOURS
+
+  const urgenceDeclaree = typeof answers.urgence === 'string' ? answers.urgence : undefined
+  // L'expiration de licence prime sur l'urgence déclarée.
+  const niveauUrgence = licenceUrgente ? 'urgent_chaud' : mapUrgence(urgenceDeclaree)
+
+  const reset = useCallback(() => {
+    setPhase('siret')
+    setStep(0)
+    setSiret('')
+    setSiretStatus('idle')
+    setRegistry(null)
+    setAnswers({})
+    setEmail('')
+    setPrenom('')
+    setTelephone('')
+    setSending(false)
+    setSendError(false)
+  }, [])
+
+  // Verrouille le scroll pendant l'ouverture
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : ""
+    document.body.style.overflow = open ? 'hidden' : ''
     if (!open) {
-      setTimeout(() => {
-        setSiretPhase(true); setStep(0); setAnswers({}); setPrenom(""); setNom("")
-        setSociete(""); setSiret(""); setSiretData(null)
-        setSiretError(false); setEmail(""); setTel(""); setSynthesis(null)
-      }, 300)
+      const t = setTimeout(reset, 300)
+      return () => {
+        clearTimeout(t)
+        document.body.style.overflow = ''
+      }
     }
-    return () => { document.body.style.overflow = "" }
-  }, [open])
-
-  // Esc key
-  const close = useCallback(() => onClose(), [onClose])
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") close() }
-    window.addEventListener("keydown", h)
-    return () => window.removeEventListener("keydown", h)
-  }, [close])
-
-  // Auto-fetch SIRET when 14 digits entered
-  useEffect(() => {
-    const clean = siret.replace(/\s/g, "")
-    if (clean.length !== 14) { setSiretData(null); setSiretError(false); return }
-    setSiretLoading(true)
-    setSiretError(false)
-    fetchSiretData(clean).then((d) => {
-      setSiretLoading(false)
-      if (d) { setSiretData(d); if (!societe) setSociete(d.nom) }
-      else setSiretError(true)
-    })
-  }, [siret]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Focus textarea on open question
-  useEffect(() => {
-    if (currentQ?.type === "open") {
-      setTimeout(() => textareaRef.current?.focus(), 250)
+    return () => {
+      document.body.style.overflow = ''
     }
-  }, [step, currentQ])
+  }, [open, reset])
 
-  function go(n: number, dir: "forward" | "back") {
-    if (animating) return
-    setDirection(dir)
-    setAnimating(true)
-    setTimeout(() => {
-      setStep(n)
-      setAnimating(false)
-    }, 180)
-  }
+  // Reprend le SIRET déjà saisi dans la section d'inscription
+  useEffect(() => {
+    if (open && initialSiret) setSiret(formatSiret(initialSiret))
+  }, [open, initialSiret])
 
-  function selectOption(option: string) {
-    const q = QUESTIONS[step]
-    if (!q) return
-    setAnswers((prev) => ({ ...prev, [q.id]: option }))
-    go(step + 1, "forward")
-  }
+  // Échap ferme
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [onClose])
 
-  function submitOpenQuestion() {
-    go(step + 1, "forward")
+  // Vérification au registre dès 14 chiffres saisis
+  useEffect(() => {
+    if (digits.length !== 14) {
+      setSiretStatus('idle')
+      setRegistry(null)
+      return
+    }
+
+    let cancelled = false
+    setSiretStatus('loading')
+
+    fetch(`/api/verify-siret/${digits}`)
+      .then((r) => r.json())
+      .then((data: RegistryData & { found?: boolean; reason?: string }) => {
+        if (cancelled) return
+        if (data.found) {
+          setRegistry(data)
+          setSiretStatus('found')
+          // Pré-remplissage de la taille de flotte depuis le registre
+          const bucket = fleetBucketFromProxy(data.proxy_flotte)
+          if (bucket) setAnswers((prev) => ({ ...prev, taille_flotte: bucket }))
+        } else {
+          setRegistry(null)
+          setSiretStatus(data.reason === 'registry_unavailable' ? 'unavailable' : 'not_found')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSiretStatus('unavailable')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [digits])
+
+  function answer(id: string, value: string, multiple?: boolean) {
+    if (multiple) {
+      setAnswers((prev) => {
+        const cur = Array.isArray(prev[id]) ? (prev[id] as string[]) : []
+        return {
+          ...prev,
+          [id]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value],
+        }
+      })
+      return
+    }
+    setAnswers((prev) => ({ ...prev, [id]: value }))
+    if (step < TOTAL_Q - 1) setStep(step + 1)
+    else setPhase('contact')
   }
 
   function goBack() {
-    if (siretPhase) return
-    if (step === 0) { setSiretPhase(true); return }
-    go(step - 1, "back")
+    if (phase === 'contact') {
+      setPhase('questions')
+      setStep(TOTAL_Q - 1)
+      return
+    }
+    if (phase === 'questions') {
+      if (step === 0) setPhase('siret')
+      else setStep(step - 1)
+    }
   }
 
-  function startDiagnostic() {
-    if (siretData && !societe) setSociete(siretData.nom)
-    setSiretPhase(false)
-  }
-
-  async function submitContact(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
     setSending(true)
-    const synth = generateSynthesis(answers)
-    setSynthesis(synth)
+    setSendError(false)
+
+    const zones = Array.isArray(answers.zones_livraison) ? (answers.zones_livraison as string[]) : []
+    const roleLabel = typeof answers.role_transport === 'string' ? answers.role_transport : ''
+
     try {
-      await fetch("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/qualify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          source: "funnel",
-          prenom, nom, societe, email, tel,
-          siret:            siretData?.siret ?? siret,
-          siren:            siretData?.siren ?? "",
-          societe_legale:   siretData?.nom ?? societe,
-          adresse:          siretData?.adresse ?? "",
-          ville:            siretData?.ville ?? "",
-          code_postal:      siretData?.codePostal ?? "",
-          naf:              siretData?.naf ?? "",
-          libelle_naf:      siretData?.libelleNaf ?? "",
-          effectif_sirene:  siretData?.effectif ?? "",
-          date_creation:    siretData?.dateCreation ?? "",
-          forme_juridique:  siretData?.formeJuridique ?? "",
-          is_transport:     siretData?.isTransport ?? false,
-          role:              answers.role,
-          structure:         answers.structure,
-          phase:             answers.phase,
-          activite:          answers.activite,
-          clients:           answers.clients,
-          flotte:            answers.flotte,
-          conducteurs:       answers.conducteurs,
-          controle_drieat:   answers.controle,
-          contrat_perdu:     answers.contratPerdu,
-          douleur_libre:     answers.douleurLibre,
-          priorite:          answers.priorite,
-          frein_principal:   answers.frein,
-          declic_libre:      answers.declicLibre,
-          roi_attendu:       answers.roi,
-          outils_actuels:    answers.outils,
-          rse:               answers.rse,
-          securite_duerp:    answers.securite,
-          responsable_qse:   answers.qse,
-          docs_a_jour:       answers.docsAJour,
-          delai_souhaite:    answers.delai,
-          profil_type:       synth.profilType,
-          urgence:           synth.urgence,
-          douleurs:          synth.douleurs.join(" | "),
+          siret: digits || null,
+          siret_non_verifie: siretStatus !== 'found',
+          raison_sociale: registry?.raison_sociale ?? '',
+          email,
+          prenom,
+          telephone,
+          q_type_marchandise: answers.type_marchandise ?? '',
+          q_zones_livraison: zones,
+          q_nb_vehicules_declare: parseFleetSize(answers.taille_flotte as string | undefined),
+          q_role_transport: ROLE_TRANSPORT_CODES[roleLabel] ?? '',
+          q_besoin_principal: answers.besoin_principal ?? '',
+          q_urgence: answers.urgence ?? '',
         }),
       })
-    } catch { /* fail silently */ }
-    setSending(false)
-    go(TOTAL + 1, "forward")
+      const json = await res.json()
+      if (json.status !== 'ok') throw new Error('refused')
+      setPhase('sortie')
+    } catch {
+      setSendError(true)
+    } finally {
+      setSending(false)
+    }
   }
 
   if (!open) return null
 
-  const slideStyle: React.CSSProperties = animating
-    ? {
-        opacity: 0,
-        transform: direction === "forward" ? "translateX(20px)" : "translateX(-20px)",
-        transition: "all 0.18s ease",
-      }
-    : {
-        opacity: 1,
-        transform: "translateX(0)",
-        transition: "all 0.28s cubic-bezier(0.25,0.1,0.25,1) 0.02s",
-      }
+  const q = FUNNEL_QUESTIONS[step]
+  const currentValue = q ? answers[q.id] : undefined
+  const multiSelection = Array.isArray(currentValue) ? currentValue : []
 
-  const urgenceLabel = synthesis
-    ? synthesis.urgence === 3 ? "URGENT" : synthesis.urgence === 2 ? "PRIORITAIRE" : "STANDARD"
-    : ""
-  const urgenceColor = synthesis
-    ? synthesis.urgence === 3 ? "#EF4444" : synthesis.urgence === 2 ? "#F59E0B" : "#4A7B8C"
-    : "#4A7B8C"
+  const headerLabel =
+    phase === 'siret'
+      ? 'Votre entreprise'
+      : phase === 'questions'
+        ? `Question ${step + 1} sur ${TOTAL_Q}`
+        : phase === 'contact'
+          ? 'Dernière étape'
+          : 'Votre prochain pas'
+
+  const progress =
+    phase === 'siret' ? 0 : phase === 'questions' ? ((step + 1) / (TOTAL_Q + 1)) * 100 : 100
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pré-qualification ClearGo"
+    >
       <div
-        className="absolute inset-0 backdrop-blur-md"
-        style={{ background: "rgba(28,43,53,0.75)", animation: "fadeIn 0.2s ease both" }}
-        onClick={close}
+        className="absolute inset-0"
+        style={{ background: 'rgba(13,43,94,0.6)', animation: 'fadeIn .2s ease both' }}
+        onClick={onClose}
       />
 
-      {/* Modal */}
       <div
-        className="relative w-full sm:max-w-lg flex flex-col bg-white sm:rounded-3xl overflow-hidden shadow-2xl"
+        className="relative flex w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl"
         style={{
-          maxHeight: "92vh",
-          borderRadius: "24px 24px 0 0",
-          animation: "slideDownModal 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+          maxHeight: '92vh',
+          borderRadius: '20px 20px 0 0',
+          animation: 'slideDownModal .3s var(--ease-spring) both',
         }}
       >
-        {/* ── Header ── */}
-        <div className="flex items-center gap-3 px-6 pt-5 pb-4 border-b" style={{ borderColor: "#F0F4F8" }}>
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b px-5 pt-4 pb-3" style={{ borderColor: 'var(--line-l)' }}>
           <button
             onClick={goBack}
-            className="p-2 rounded-xl transition-all"
+            aria-label="Revenir à l'étape précédente"
+            className="rounded-lg p-2"
             style={{
-              visibility: (siretPhase || isDone) ? "hidden" : "visible",
-              background: "transparent",
-              color: "#8FA4B2",
+              visibility: phase === 'questions' || phase === 'contact' ? 'visible' : 'hidden',
+              color: 'var(--t4)',
             }}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <IconBack />
           </button>
-          <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4A7B8C" }}>
-              {isDone ? "Votre synthèse personnalisée" : siretPhase ? "Identification de votre entreprise" : "Pré-qualification gratuite"}
-            </p>
-            {!isDone && !siretPhase && (
-              <p className="text-[11px] mt-0.5" style={{ color: "#8FA4B2" }}>
-                {isContact
-                  ? "Dernière étape"
-                  : currentQ
-                    ? `${currentQ.block} · ${step + 1} / ${TOTAL + 1}`
-                    : ""}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={close}
-            className="p-2 rounded-xl transition-colors"
-            style={{ color: "#8FA4B2" }}
-          >
-            <X className="h-5 w-5" />
+          <p className="flex-1 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--green-text)' }}>
+            {headerLabel}
+          </p>
+          <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-2" style={{ color: 'var(--t4)' }}>
+            <IconClose />
           </button>
         </div>
 
-        {/* ── Progress bar ── */}
-        {!isDone && !siretPhase && (
-          <div className="h-[3px]" style={{ background: "#F0F4F8" }}>
+        {/* Progression */}
+        {phase !== 'sortie' && (
+          <div className="h-[3px]" style={{ background: 'var(--line-l)' }}>
             <div
               className="h-full"
-              style={{ width: `${progress}%`, background: "#4A7B8C", transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)" }}
+              style={{
+                width: `${progress}%`,
+                background: 'var(--green)',
+                transition: 'width .45s var(--ease-smooth)',
+              }}
             />
           </div>
         )}
 
-        {/* ── Social proof strip ── */}
-        {!isDone && !isContact && !siretPhase && (
-          <div className="flex items-center justify-center gap-4 border-b px-6 py-2" style={{ borderColor: "#F0F4F8", background: "#F5F7F8" }}>
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#5E7485" }}>
-              <span>⏱</span>
-              <span>1 min 45</span>
-            </span>
-            <span className="h-3 w-px" style={{ background: "#D5DFE5" }} />
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#5E7485" }}>
-              <span>✅</span>
-              <span><strong style={{ color: "#1C2B35" }}>3 284</strong> transporteurs ont déjà répondu</span>
-            </span>
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
 
-        {/* ── Content ── */}
-        <div className="overflow-y-auto flex-1 px-6 py-6">
-
-          {/* ══ SIRET IDENTIFICATION SCREEN ═════════════════════════════════ */}
-          {siretPhase && (
-            <div style={{ animation: "scaleUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4A7B8C" }}>
-                <span className="h-px w-6" style={{ background: "#4A7B8C" }} />
-                Étape 1 sur 2
-              </div>
-              <h3
-                className="font-black leading-tight mb-2"
-                style={{ fontSize: "clamp(20px, 4vw, 26px)", color: "#1C2B35" }}
-              >
-                Identifiez votre entreprise
+          {/* ═══ Étape 0 — SIRET ═══════════════════════════════════════════ */}
+          {phase === 'siret' && (
+            <div>
+              <h3 className="mb-2 text-[22px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+                Votre numéro SIRET
               </h3>
-              <p className="mb-6 text-[14px] leading-relaxed" style={{ color: "#5E7485" }}>
-                Entrez votre SIRET — on identifie automatiquement votre société, votre secteur NAF et vos obligations réglementaires.
+              <p className="mb-5 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+                Nous vérifions votre inscription au registre national des transporteurs.
               </p>
 
-              {/* SIRET input */}
-              <div className="mb-4">
-                <label
-                  className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider"
-                  style={{ color: "#1C2B35" }}
-                >
-                  SIRET
-                  {siretLoading && <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#4A7B8C" }} />}
-                </label>
-                <input
-                  type="text"
-                  value={siret}
-                  onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
-                  placeholder="362 521 879 00034"
-                  maxLength={17}
-                  className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder-opacity-40 outline-none transition-all"
-                  style={{
-                    borderColor: siretData ? "#4A7B8C" : siretError ? "#EF4444" : "#D5DFE5",
-                    background: siretData ? "rgba(74,123,140,0.05)" : "#F5F7F8",
-                    color: "#1C2B35",
-                  }}
-                  autoFocus
-                />
-                {siretError && (
-                  <p className="mt-1.5 text-[11px] text-red-500">SIRET non trouvé — vérifiez les 14 chiffres</p>
-                )}
-              </div>
-
-              {/* Company card */}
-              {siretData && (
-                <div
-                  className="mb-5 rounded-xl border p-4"
-                  style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
-                      style={{ background: "#4A7B8C" }}
-                    >
-                      <Building2 className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-[14px] font-black truncate" style={{ color: "#1C2B35" }}>{siretData.nom}</p>
-                        {siretData.isTransport && (
-                          <span
-                            className="flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
-                            style={{ background: "#4A7B8C" }}
-                          >
-                            Transport ✓
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                        {siretData.adresse && (
-                          <p className="col-span-2 text-[11px]" style={{ color: "#5E7485" }}>
-                            📍 {siretData.adresse}, {siretData.codePostal} {siretData.ville}
-                          </p>
-                        )}
-                        {siretData.libelleNaf && (
-                          <p className="text-[11px]" style={{ color: "#5E7485" }}>🏷 {siretData.naf} — {siretData.libelleNaf}</p>
-                        )}
-                        {siretData.effectif && (
-                          <p className="text-[11px]" style={{ color: "#5E7485" }}>👥 {siretData.effectif}</p>
-                        )}
-                        {siretData.dateCreation && (
-                          <p className="text-[11px]" style={{ color: "#5E7485" }}>📅 Créée en {siretData.dateCreation}</p>
-                        )}
-                        <p className="text-[11px]" style={{ color: "#5E7485" }}>🔢 SIREN {siretData.siren}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA */}
-              <button
-                type="button"
-                onClick={startDiagnostic}
-                className="btn-press w-full rounded-2xl py-4 text-[16px] font-extrabold text-white"
+              <label htmlFor="siret" className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+                SIRET
+                {siretStatus === 'loading' && <span style={{ color: 'var(--green)' }}><Spinner /></span>}
+              </label>
+              <input
+                id="siret"
+                inputMode="numeric"
+                autoComplete="off"
+                value={siret}
+                onChange={(e) => setSiret(formatSiret(e.target.value))}
+                placeholder="424 644 201 00032"
+                className="num w-full rounded-xl border-2 px-4 py-3.5 text-[16px] font-medium outline-none"
                 style={{
-                  background: siretData ? "#4A7B8C" : "#1C2B35",
-                  boxShadow: siretData ? "0 8px 32px -4px rgba(74,123,140,0.45)" : "none",
+                  borderColor:
+                    siretStatus === 'found'
+                      ? 'var(--green)'
+                      : siretStatus === 'not_found'
+                        ? 'var(--reglo-orange)'
+                        : 'var(--line)',
+                  background: siretStatus === 'found' ? 'var(--green-pale)' : 'var(--surface)',
+                  color: 'var(--cleargo-navy)',
                 }}
-              >
-                {siretData ? `Démarrer le diagnostic — ${siretData.nom.split(" ")[0]} →` : "Continuer sans SIRET →"}
-              </button>
-
-              {!siretData && (
-                <p className="mt-2 text-center text-[11px]" style={{ color: "#8FA4B2" }}>
-                  Vous pourrez renseigner votre SIRET plus tard
-                </p>
-              )}
-              <p className="mt-3 text-center text-[11px]" style={{ color: "#8FA4B2" }}>
-                Gratuit · Sans engagement · 5 minutes
-              </p>
-            </div>
-          )}
-
-          {/* ══ SYNTHESIS SCREEN ══════════════════════════════════════════════ */}
-          {isDone && synthesis && (
-            <div style={{ animation: "scaleUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-
-              {/* Profil card */}
-              <div className="rounded-2xl p-5 mb-5" style={{ background: "#1C2B35" }}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7B8C" }}>
-                      Profil identifié
-                    </p>
-                    <p className="text-[18px] font-black text-white leading-tight">{synthesis.profilType}</p>
-                    <p className="text-[12px] text-white/50 mt-0.5">{synthesis.profilSub}</p>
-                  </div>
-                  <div
-                    className="flex-shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-white"
-                    style={{ background: urgenceColor }}
-                  >
-                    {urgenceLabel}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.08] px-4 py-3">
-                  <p className="text-[13px] font-medium italic text-white/75">{synthesis.citation}</p>
-                </div>
-              </div>
-
-              {/* Pills recap */}
-              {synthesis.pills.length > 0 && (
-                <div className="mb-5 flex flex-wrap gap-2">
-                  {synthesis.pills.map((p) => (
-                    <span
-                      key={p}
-                      className="rounded-full border px-3 py-1 text-[11px] font-semibold"
-                      style={{ borderColor: "#D5DFE5", background: "white", color: "#5E7485" }}
-                    >
-                      {p}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Douleurs identifiées */}
-              <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-5">
-                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-red-500">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Douleurs identifiées
-                </p>
-                <div className="flex flex-col gap-2.5">
-                  {synthesis.douleurs.map((d) => (
-                    <div key={d} className="flex items-start gap-2.5">
-                      <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
-                      <p className="text-[13px]" style={{ color: "#1C2B35" }}>{d}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Ce que ClearGo peut faire */}
-              <div
-                className="mb-4 rounded-2xl border p-5"
-                style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
-              >
-                <p
-                  className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: "#4A7B8C" }}
-                >
-                  <Zap className="h-3.5 w-3.5" />
-                  Ce que ClearGo peut faire pour vous
-                </p>
-                <div className="flex flex-col gap-2.5">
-                  {synthesis.reco.map((r) => (
-                    <div key={r} className="flex items-start gap-2.5">
-                      <CheckCircle2 className="mt-[2px] h-4 w-4 flex-shrink-0" style={{ color: "#4A7B8C" }} strokeWidth={2.5} />
-                      <p className="text-[13px]" style={{ color: "#1C2B35" }}>{r}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* SWOT */}
-              <div className="mb-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#8FA4B2" }}>
-                  Analyse SWOT — vue d&apos;ensemble
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-green-700">💪 Forces</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {synthesis.swot.forces.slice(0, 3).map((f) => (
-                        <li key={f} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-600" />
-                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-red-600">⚠️ Faiblesses</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {synthesis.swot.faiblesses.slice(0, 3).map((f) => (
-                        <li key={f} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
-                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600">🚀 Opportunités</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {synthesis.swot.opportunites.slice(0, 3).map((o) => (
-                        <li key={o} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
-                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{o}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-orange-600">🔥 Menaces</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {synthesis.swot.menaces.slice(0, 3).map((m) => (
-                        <li key={m} className="flex items-start gap-1.5">
-                          <span className="mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-500" />
-                          <span className="text-[11px] leading-snug" style={{ color: "#1C2B35" }}>{m}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ce qui vous attend — sans prix */}
-              <div className="mb-5 rounded-2xl border p-5" style={{ borderColor: "#D5DFE5", background: "#F5F7F8" }}>
-                <p
-                  className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: "#8FA4B2" }}
-                >
-                  <Target className="h-3.5 w-3.5" />
-                  Ce qui vous attend
-                </p>
-                {[
-                  "Résultat de pré-qualification sous 24h",
-                  "Trust Score 0-1000 + plan d'action personnalisé",
-                  "Prise de contact par un expert ClearGo",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 border-b py-2 last:border-0"
-                    style={{ borderColor: "#D5DFE5" }}
-                  >
-                    <span
-                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white"
-                      style={{ background: "#4A7B8C" }}
-                    >
-                      ✓
-                    </span>
-                    <span className="text-[13px] font-medium" style={{ color: "#1C2B35" }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={close}
-                className="btn-press w-full rounded-2xl py-4 text-[15px] font-bold text-white"
-                style={{ background: "#1C2B35" }}
-              >
-                Fermer
-              </button>
-            </div>
-          )}
-
-          {/* ══ CONTACT ══════════════════════════════════════════════════════ */}
-          {!isDone && isContact && (
-            <div style={slideStyle}>
-              <p
-                className="mb-2 text-[11px] font-bold uppercase tracking-widest"
-                style={{ color: "#4A7B8C" }}
-              >
-                Étape finale
-              </p>
-              <h3 className="mb-2 text-[22px] font-black leading-tight" style={{ color: "#1C2B35" }}>
-                Où envoyer votre synthèse ?
-              </h3>
-              <p className="mb-7 text-[14px] leading-relaxed" style={{ color: "#5E7485" }}>
-                On génère votre profil personnalisé et on vous recontacte sous 24h.
-              </p>
-              <form onSubmit={submitContact} className="flex flex-col gap-4">
-
-                {/* Prénom + Nom */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Prénom</label>
-                    <input
-                      type="text" required value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Jean"
-                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Nom</label>
-                    <input
-                      type="text" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont"
-                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Société */}
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Société</label>
-                  <input
-                    type="text" required value={societe} onChange={(e) => setSociete(e.target.value)} placeholder="Transports Dupont & Fils"
-                    className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                    style={{ borderColor: "#D5DFE5", background: siretData ? "rgba(74,123,140,0.05)" : "#F5F7F8", color: "#1C2B35" }}
-                  />
-                  {siretData && (
-                    <p className="mt-1 text-[11px]" style={{ color: "#4A7B8C" }}>
-                      ✓ Pré-rempli depuis votre SIRET
-                    </p>
-                  )}
-                </div>
-
-                {/* SIRET — only if not already entered */}
-                {!siretData && (
-                  <div>
-                    <label className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>
-                      SIRET
-                      <span className="font-normal normal-case" style={{ color: "#8FA4B2" }}>(optionnel)</span>
-                    </label>
-                    <input
-                      type="text" value={siret}
-                      onChange={(e) => setSiret(e.target.value.replace(/[^0-9\s]/g, ""))}
-                      placeholder="362 521 879 00034"
-                      maxLength={17}
-                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                      style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                    />
-                  </div>
+                autoFocus
+              />
+              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--t4)' }}>
+                14 chiffres
+                {digits.length === 14 && !isLuhnValid(digits) && (
+                  <span style={{ color: 'var(--reglo-orange)' }}> · ce numéro semble comporter une erreur de saisie</span>
                 )}
+              </p>
 
-                {/* SIRET confirmed badge */}
-                {siretData && (
+              {/* Cas 1 & 2 — trouvé */}
+              {siretStatus === 'found' && registry && (
+                <div className="mt-5">
                   <div
-                    className="flex items-center gap-3 rounded-xl border px-4 py-3"
-                    style={{ borderColor: "rgba(74,123,140,0.3)", background: "rgba(74,123,140,0.07)" }}
+                    className="rounded-xl border p-4"
+                    style={{ borderColor: 'rgba(39,174,96,0.35)', background: 'var(--green-pale)' }}
                   >
-                    <Building2 className="h-4 w-4 flex-shrink-0" style={{ color: "#4A7B8C" }} />
-                    <div>
-                      <p className="text-[12px] font-bold" style={{ color: "#1C2B35" }}>{siretData.nom}</p>
-                      <p className="text-[11px]" style={{ color: "#5E7485" }}>SIRET {siretData.siret} · {siretData.naf} · {siretData.effectif}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Email */}
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>Email professionnel</label>
-                  <input
-                    type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jean@transport.fr"
-                    className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                  />
-                </div>
-
-                {/* Téléphone */}
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: "#1C2B35" }}>
-                    Téléphone <span className="font-normal normal-case" style={{ color: "#8FA4B2" }}>(optionnel)</span>
-                  </label>
-                  <input
-                    type="tel" value={tel} onChange={(e) => setTel(e.target.value)} placeholder="06 XX XX XX XX"
-                    className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] font-medium placeholder:text-[#8FA4B2] outline-none transition-all"
-                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                  />
-                </div>
-                <button
-                  type="submit" disabled={sending}
-                  className="btn-press mt-2 w-full rounded-2xl py-4 text-[16px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
-                  style={{ background: "#4A7B8C", boxShadow: "0 8px 32px -4px rgba(74,123,140,0.4)" }}
-                >
-                  {sending ? "Génération en cours…" : "Voir ma synthèse personnalisée →"}
-                </button>
-                <p className="text-center text-[11px]" style={{ color: "#8FA4B2" }}>
-                  Pas de spam · Aucun engagement · Réponse sous 24h
-                </p>
-              </form>
-            </div>
-          )}
-
-          {/* ══ QUESTIONS ════════════════════════════════════════════════════ */}
-          {!isDone && !siretPhase && currentQ && (
-            <div style={slideStyle}>
-              <h3
-                className="font-black leading-tight mb-2"
-                style={{ fontSize: "clamp(18px, 3.5vw, 22px)", color: "#1C2B35" }}
-              >
-                {currentQ.label}
-              </h3>
-              {currentQ.hint && (
-                <p className="text-[13px] mb-5" style={{ color: "#8FA4B2" }}>{currentQ.hint}</p>
-              )}
-
-              {/* ── Choice question ── */}
-              {currentQ.type === "choice" && (
-                <div className={`flex flex-col gap-2.5 ${!currentQ.hint ? "mt-5" : ""}`}>
-                  {currentQ.options?.map((opt) => {
-                    const selected = currentAnswer === opt
-                    return (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => selectOption(opt)}
-                        className="w-full text-left rounded-2xl border-2 px-5 py-4 text-[14px] font-semibold transition-all"
-                        style={{
-                          borderColor: selected ? "#4A7B8C" : "#D5DFE5",
-                          background:  selected ? "rgba(74,123,140,0.08)" : "#FAFBFC",
-                          color:       selected ? "#1C2B35" : "#5E7485",
-                          transform:   selected ? "scale(1.01)" : "scale(1)",
-                        }}
-                      >
-                        <span className="flex items-center gap-4">
-                          <span
-                            className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all"
-                            style={{
-                              borderColor: selected ? "#4A7B8C" : "#D5DFE5",
-                              background:  selected ? "#4A7B8C" : "transparent",
-                            }}
-                          >
-                            {selected && <span className="h-2 w-2 rounded-full bg-white" />}
-                          </span>
-                          {opt}
+                    <p className="mb-2 flex items-center gap-2 text-[12px] font-bold" style={{ color: 'var(--green-text)' }}>
+                      <IconCheck />
+                      Nous avons trouvé votre entreprise
+                    </p>
+                    <p className="text-[15px] font-black" style={{ color: 'var(--cleargo-navy)' }}>
+                      {registry.raison_sociale}
+                    </p>
+                    <div className="mt-2 flex flex-col gap-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+                      {registry.gestionnaire_transport && (
+                        <span>Gestionnaire : {registry.gestionnaire_transport}</span>
+                      )}
+                      {registry.commune && (
+                        <span>
+                          {registry.commune}
+                          {registry.departement ? ` (${registry.departement})` : ''}
                         </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+                      )}
+                      {registry.fin_validite_lti && (
+                        <span>Licence de transport valide jusqu’au {registry.fin_validite_lti}</span>
+                      )}
+                      {registry.proxy_flotte != null && (
+                        <span>
+                          <span className="num">{registry.proxy_flotte}</span> copies conformes déclarées
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {/* ── Open question ── */}
-              {currentQ.type === "open" && (
-                <div className={!currentQ.hint ? "mt-5" : ""}>
-                  <textarea
-                    ref={textareaRef}
-                    value={currentAnswer}
-                    onChange={(e) =>
-                      setAnswers((prev) => ({ ...prev, [currentQ.id]: e.target.value }))
-                    }
-                    placeholder={currentQ.placeholder}
-                    rows={4}
-                    className="w-full resize-none rounded-xl border-2 px-4 py-3.5 text-[14px] font-medium leading-relaxed placeholder:text-[#8FA4B2] outline-none transition-all"
-                    style={{ borderColor: "#D5DFE5", background: "#F5F7F8", color: "#1C2B35" }}
-                  />
-                  <div className="mt-4 flex gap-3">
-                    {currentQ.optional && (
-                      <button
-                        type="button"
-                        onClick={submitOpenQuestion}
-                        className="flex-1 rounded-xl border-2 py-3.5 text-[14px] font-semibold transition-all"
-                        style={{ borderColor: "#D5DFE5", color: "#8FA4B2" }}
-                      >
-                        Passer →
-                      </button>
-                    )}
+                  {/* Cas 2 — licence proche de l'expiration. Ton factuel, pas alarmiste. */}
+                  {licenceUrgente && (
+                    <div
+                      className="mt-3 flex gap-3 rounded-xl border p-4"
+                      style={{ borderColor: 'rgba(249,115,22,0.4)', background: 'rgba(249,115,22,0.07)' }}
+                    >
+                      <ClearGoIcon name="expiration" size={22} className="mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[13px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+                          Votre licence de transport expire dans{' '}
+                          <span className="num">{joursAvantExpiration}</span> jours.
+                        </p>
+                        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+                          Le renouvellement se fait auprès de la DREAL. Si ce n’est pas encore
+                          engagé, c’est la priorité absolue.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <button
                       type="button"
-                      onClick={submitOpenQuestion}
-                      disabled={!currentQ.optional && !currentAnswer.trim()}
-                      className="btn-press flex-1 rounded-xl py-3.5 text-[14px] font-bold text-white transition-all disabled:pointer-events-none disabled:opacity-40"
-                      style={{
-                        background: "#4A7B8C",
-                        boxShadow: currentAnswer.trim() ? "0 6px 20px -4px rgba(74,123,140,0.4)" : "none",
+                      onClick={() => {
+                        setSiret('')
+                        setRegistry(null)
+                        setSiretStatus('idle')
                       }}
+                      className="rounded-xl border px-4 py-3 text-[13px] font-semibold sm:flex-1"
+                      style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
+                    >
+                      Ce n’est pas mon entreprise
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhase('questions')}
+                      className="btn-press rounded-xl px-5 py-3 text-[14px] font-bold text-white sm:flex-1"
+                      style={{ background: 'var(--green)' }}
                     >
                       Continuer →
                     </button>
                   </div>
                 </div>
               )}
+
+              {/* Cas 3 — non trouvé. On n'accuse pas, on ne bloque pas. */}
+              {(siretStatus === 'not_found' || siretStatus === 'unavailable') && (
+                <div className="mt-5">
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
+                    <p className="text-[13.5px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
+                      {siretStatus === 'not_found'
+                        ? 'Ce SIRET n’apparaît pas au registre national des transporteurs.'
+                        : 'La vérification au registre est momentanément indisponible.'}
+                    </p>
+                    {siretStatus === 'not_found' && (
+                      <ul className="mt-2 flex flex-col gap-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+                        <li>· Une erreur de saisie</li>
+                        <li>· Votre inscription est très récente et pas encore publiée</li>
+                        <li>· Votre activité ne relève pas du transport routier de marchandises</li>
+                      </ul>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSiret('')
+                        setSiretStatus('idle')
+                      }}
+                      className="rounded-xl border px-4 py-3 text-[13px] font-semibold sm:flex-1"
+                      style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
+                    >
+                      Corriger le SIRET
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhase('questions')}
+                      className="btn-press rounded-xl px-5 py-3 text-[14px] font-bold text-white sm:flex-1"
+                      style={{ background: 'var(--cleargo-navy)' }}
+                    >
+                      Continuer quand même →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-5 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
+                Gratuit · Sans engagement · Réservé aux transporteurs routiers
+              </p>
             </div>
+          )}
+
+          {/* ═══ Questions ═════════════════════════════════════════════════ */}
+          {phase === 'questions' && q && (
+            <div key={q.id} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
+              <h3 className="mb-1 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+                {q.label}
+              </h3>
+              {q.multiple && (
+                <p className="mb-4 text-[12.5px]" style={{ color: 'var(--t4)' }}>
+                  Plusieurs réponses possibles.
+                </p>
+              )}
+
+              <div className={`flex flex-col gap-2.5 ${q.multiple ? '' : 'mt-4'}`}>
+                {q.options.map((opt) => {
+                  const selected = q.multiple ? multiSelection.includes(opt) : currentValue === opt
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => answer(q.id, opt, q.multiple)}
+                      className="btn-press w-full rounded-xl border-2 px-5 py-4 text-left text-[14.5px] font-semibold"
+                      style={{
+                        borderColor: selected ? 'var(--green)' : 'var(--line)',
+                        background: selected ? 'var(--green-pale)' : 'var(--surface)',
+                        color: selected ? 'var(--cleargo-navy)' : 'var(--t3)',
+                      }}
+                    >
+                      <span className="flex items-center gap-3.5">
+                        <span
+                          className="flex h-5 w-5 shrink-0 items-center justify-center border-2 text-white"
+                          style={{
+                            borderRadius: q.multiple ? 6 : 999,
+                            borderColor: selected ? 'var(--green)' : 'var(--line)',
+                            background: selected ? 'var(--green)' : 'transparent',
+                          }}
+                        >
+                          {selected && <IconCheck />}
+                        </span>
+                        {opt}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Valeur pré-remplie depuis le registre */}
+              {q.prefillHint && registry?.proxy_flotte != null && (
+                <p className="mt-3 text-[12px]" style={{ color: 'var(--t4)' }}>
+                  {q.prefillHint} Registre : <span className="num">{registry.proxy_flotte}</span> copies
+                  conformes déclarées.
+                </p>
+              )}
+
+              {q.multiple && (
+                <button
+                  type="button"
+                  disabled={multiSelection.length === 0}
+                  onClick={() => (step < TOTAL_Q - 1 ? setStep(step + 1) : setPhase('contact'))}
+                  className="btn-press mt-4 w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
+                  style={{ background: 'var(--green)' }}
+                >
+                  Continuer →
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ═══ Contact ═══════════════════════════════════════════════════ */}
+          {phase === 'contact' && (
+            <form onSubmit={submit} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
+              <h3 className="mb-2 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+                Où vous joindre ?
+              </h3>
+              <p className="mb-5 text-[14px]" style={{ color: 'var(--t3)' }}>
+                Nous vous ouvrons votre espace et vous proposons la suite adaptée à votre situation.
+              </p>
+
+              <div className="flex flex-col gap-3.5">
+                <div>
+                  <label htmlFor="email" className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+                    Email professionnel
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="jean@transports-dupont.fr"
+                    className="w-full rounded-xl border-2 px-4 py-3.5 text-[15px] outline-none"
+                    style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--cleargo-navy)' }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="prenom" className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+                      Prénom
+                    </label>
+                    <input
+                      id="prenom"
+                      value={prenom}
+                      onChange={(e) => setPrenom(e.target.value)}
+                      className="w-full rounded-xl border-2 px-4 py-3 text-[15px] outline-none"
+                      style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--cleargo-navy)' }}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="tel" className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+                      Téléphone
+                    </label>
+                    <input
+                      id="tel"
+                      type="tel"
+                      value={telephone}
+                      onChange={(e) => setTelephone(e.target.value)}
+                      className="num w-full rounded-xl border-2 px-4 py-3 text-[15px] outline-none"
+                      style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--cleargo-navy)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={sending}
+                className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
+                style={{ background: 'var(--green)' }}
+              >
+                {sending ? 'Envoi…' : 'Voir ma suite →'}
+              </button>
+              {sendError && (
+                <p className="mt-2 text-center text-[12px]" style={{ color: 'var(--score-insuffisant)' }}>
+                  L’envoi a échoué. Réessayez dans un instant.
+                </p>
+              )}
+              <p className="mt-3 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
+                Vos données restent en France · Sans engagement
+              </p>
+            </form>
+          )}
+
+          {/* ═══ Sortie conditionnelle ═════════════════════════════════════ */}
+          {phase === 'sortie' && (
+            <SortieConditionnelle
+              niveau={niveauUrgence}
+              licenceUrgente={licenceUrgente}
+              jours={joursAvantExpiration}
+              onClose={onClose}
+            />
           )}
         </div>
 
-        {/* Bottom accent stripe */}
-        <div className="h-1 flex-shrink-0" style={{ background: "#4A7B8C" }} />
+        <div className="h-1 shrink-0" style={{ background: 'var(--green)' }} />
       </div>
+    </div>
+  )
+}
+
+// ── Écran de sortie ─────────────────────────────────────────────────────────
+
+function ActionButton({
+  href,
+  label,
+  primary,
+  disabledNote,
+}: {
+  href: string | null
+  label: string
+  primary?: boolean
+  disabledNote?: string
+}) {
+  const base = 'btn-press block w-full rounded-xl px-5 py-3.5 text-center text-[14px] font-bold'
+
+  if (!href) {
+    return (
+      <div>
+        <span
+          className={`${base} cursor-not-allowed opacity-55`}
+          style={{
+            background: primary ? 'var(--green)' : 'transparent',
+            border: primary ? 'none' : '1px solid var(--line)',
+            color: primary ? '#fff' : 'var(--t3)',
+          }}
+        >
+          {label}
+        </span>
+        {disabledNote && (
+          <p className="mt-1 text-center text-[11px]" style={{ color: 'var(--t4)' }}>
+            {disabledNote}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={base}
+      style={{
+        background: primary ? 'var(--green)' : 'transparent',
+        border: primary ? 'none' : '1px solid var(--line)',
+        color: primary ? '#fff' : 'var(--cleargo-navy)',
+      }}
+    >
+      {label}
+    </a>
+  )
+}
+
+function SortieConditionnelle({
+  niveau,
+  licenceUrgente,
+  jours,
+  onClose,
+}: {
+  niveau: 'urgent_chaud' | 'tiede' | 'froid'
+  licenceUrgente: boolean
+  jours: number | null
+  onClose: () => void
+}) {
+  const titre =
+    niveau === 'urgent_chaud'
+      ? 'Votre profil correspond à un besoin immédiat.'
+      : niveau === 'tiede'
+        ? 'Voici ce que ClearGo peut analyser chez vous.'
+        : 'Prenez le temps de découvrir.'
+
+  return (
+    <div style={{ animation: 'fadeUp .35s var(--ease-apple) both' }}>
+      <div
+        className="mb-5 flex items-center gap-3 rounded-xl p-4"
+        style={{ background: 'var(--green-pale)' }}
+      >
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+          style={{ background: 'var(--green)' }}
+        >
+          <IconCheck />
+        </span>
+        <p className="text-[13.5px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
+          Votre demande est enregistrée.
+        </p>
+      </div>
+
+      <h3 className="mb-2 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+        {titre}
+      </h3>
+
+      {licenceUrgente && jours !== null && (
+        <p className="mb-4 text-[13.5px]" style={{ color: 'var(--t3)' }}>
+          Votre licence de transport expire dans <span className="num">{jours}</span> jours : nous
+          traitons votre demande en priorité.
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        {niveau === 'urgent_chaud' && (
+          <>
+            <ActionButton
+              href={CALENDLY_URL}
+              label="Réserver un échange de 30 minutes"
+              primary
+              disabledNote="Créneaux bientôt disponibles — nous vous recontactons."
+            />
+            <ActionButton href={ESPACE_CLEARGO_URL} label="Découvrir mon espace ClearGo" />
+          </>
+        )}
+
+        {niveau === 'tiede' && (
+          <>
+            <ActionButton
+              href={WEBINAIRE_URL}
+              label={WEBINAIRE_DATE ? `Voir le webinaire du ${WEBINAIRE_DATE}` : 'Voir le prochain webinaire'}
+              primary
+              disabledNote="Prochaine date en cours de programmation."
+            />
+            <ActionButton href={ESPACE_CLEARGO_URL} label="Découvrir mon espace ClearGo" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-press w-full rounded-xl border px-5 py-3.5 text-[14px] font-bold"
+              style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
+            >
+              Être recontacté plus tard
+            </button>
+          </>
+        )}
+
+        {niveau === 'froid' && (
+          <>
+            <ActionButton
+              href={GUIDE_CONFORMITE_URL}
+              label="Recevoir le guide conformité"
+              primary
+              disabledNote="Guide en cours de finalisation — nous vous l’enverrons."
+            />
+            <ActionButton
+              href={WEBINAIRE_URL}
+              label="Voir le prochain webinaire"
+              disabledNote="Prochaine date en cours de programmation."
+            />
+            <ActionButton href={ESPACE_CLEARGO_URL} label="Créer mon espace gratuit" />
+          </>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-5 w-full rounded-xl py-3 text-[13px] font-semibold"
+        style={{ color: 'var(--t4)' }}
+      >
+        Fermer
+      </button>
     </div>
   )
 }

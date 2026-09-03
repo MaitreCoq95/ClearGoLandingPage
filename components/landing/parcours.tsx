@@ -1,217 +1,226 @@
-"use client"
+'use client'
 
-import { useEffect, useRef, useState } from "react"
-import {
-  FileCheck, CreditCard, FolderOpen, Users, BarChart2, Award, MessageSquare, ArrowRight,
-} from "lucide-react"
+import { ClearGoIcon, type ClearGoIconName } from '@/components/icons/cleargo-icon'
+import { useReveal } from '@/hooks/use-reveal'
 
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold: 0.05 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-  return { ref, visible }
+interface Etape {
+  n: number
+  icon: ClearGoIconName
+  title: string
+  sub: string
 }
 
-const ETAPES = [
+const ETAPES: Etape[] = [
   {
-    num: "01", icon: FileCheck, tag: "Gratuit", tagColor: "#8FA4B2",
-    title: "Préqualification",
-    time: "5 minutes · Avant tout engagement",
-    description: "Vous entrez votre SIRET — on identifie automatiquement votre entreprise, votre secteur NAF et vos obligations réglementaires. Puis 5 questions pour confirmer votre profil.",
-    livrable: "Confirmation d'éligibilité + récap de ce que vous allez obtenir.",
-    accent: "#8FA4B2",
+    n: 1,
+    icon: 'upload',
+    title: 'Je renseigne mon profil',
+    sub: 'Activité, flotte, spécialités, zones de livraison.',
   },
   {
-    num: "02", icon: CreditCard, tag: "Diagnostic", tagColor: "#A87055",
-    title: "Engagement",
-    time: "Accès immédiat · Tarif communiqué après pré-qualification",
-    description: "Accès sécurisé à votre parcours ClearGo. Confirmation immédiate et ouverture de votre espace client.",
-    livrable: "Email de confirmation + checklist de préparation des documents.",
-    accent: "#A87055",
+    n: 2,
+    icon: 'core-acces-profession',
+    title: 'ClearGo définit mon périmètre',
+    sub: 'Les exigences qui s’appliquent réellement à mon activité.',
   },
   {
-    num: "03", icon: FolderOpen, tag: "J+1 à J+3", tagColor: "#6B8FAA",
-    title: "Préparation des documents",
-    time: "À votre rythme, guidé",
-    description: "Vous rassemblez vos pièces via une checklist guidée : licence de transport, Kbis, attestations URSSAF & impôts, FIMO/FCO conducteurs, cartes conducteur, contrôles techniques, attestations assurance, GDP/ADR si concerné.",
-    livrable: "Espace de dépôt sécurisé + récap des documents reçus / manquants.",
-    accent: "#6B8FAA",
+    n: 3,
+    icon: 'document-valide',
+    title: 'Je prépare et dépose mes preuves',
+    sub: 'Une liste personnalisée, pas un formulaire générique.',
   },
   {
-    num: "04", icon: Users, tag: "60–90 min", tagColor: "#4A7B8C",
-    title: "Session guidée",
-    time: "Visio ou téléphone avec un expert",
-    description: "Un expert ClearGo vous accompagne pour contextualiser chaque document, comprendre votre activité réelle (sous-traitance, chargeurs, certifications visées) et identifier vos points de vigilance métier.",
-    livrable: "Compte-rendu de session + points clés identifiés.",
-    accent: "#4A7B8C",
+    n: 4,
+    icon: 'controle-technique',
+    title: 'ClearGo analyse',
+    sub: 'Chaque pièce est confrontée aux exigences applicables.',
   },
   {
-    num: "05", icon: BarChart2, tag: "48h", tagColor: "#3A4E5A",
-    title: "Analyse ClearGo",
-    time: "Traitement structuré — sans intervention de votre part",
-    description: "Validité de chaque pièce (OK / expire bientôt / expiré / manquant), croisement avec les obligations réglementaires applicables à votre activité, calcul du TrustScore selon la grille de pondération ClearGo.",
-    livrable: null,
-    accent: "#3A4E5A",
+    n: 5,
+    icon: 'cleargo-score',
+    title: 'Je comprends mon niveau',
+    sub: 'Mon score sur 1000, le détail par domaine, mes points forts.',
   },
   {
-    num: "06", icon: Award, tag: "Livrable principal", tagColor: "#4A7B8C",
-    title: "Restitution : Score + Plan d'action",
-    time: "PDF certifié + accès en ligne",
-    description: "Votre TrustScore 0–1000 avec décomposition par catégorie, comparaison sectorielle, et QR code partageable. Plus un plan d'action Pareto 80/20 : les 3 à 5 actions qui font monter votre score de 80%, avec délai, impact et ressource pour chacune.",
-    livrable: "PDF certifié + lien partageable donneur d'ordre + alertes documents expirant sous 90 jours.",
-    accent: "#4A7B8C",
-  },
-  {
-    num: "07", icon: MessageSquare, tag: "5 jours", tagColor: "#6B8FAA",
-    title: "Fenêtre d'optimisation",
-    time: "1 échange de suivi inclus (mail ou appel 30 min)",
-    description: "Après la restitution, vous avez 5 jours pour poser vos questions, clarifier le plan, comprendre les priorités. L'objectif : repartir avec un plan que vous pouvez exécuter seul.",
-    livrable: null,
-    accent: "#6B8FAA",
-  },
-  {
-    num: "08", icon: ArrowRight, tag: "Votre choix", tagColor: "#1C2B35",
-    title: "Sortie : abonnement CaaS ou autonomie",
-    time: "Deux chemins possibles",
-    description: "Vous exécutez seul votre plan → votre score est recalculé gratuitement dans 30 jours. Ou vous souscrivez à l'abonnement ClearGo pour une conformité pilotée en continu. Pas de pression. Le diagnostic a créé la clarté — la décision vous appartient.",
-    livrable: null,
-    accent: "#1C2B35",
+    n: 6,
+    icon: 'plan-dactions',
+    title: 'Je vois mes axes de progression',
+    sub: 'Un plan d’actions priorisé, avec les délais et les preuves attendues.',
   },
 ]
 
+/** Délai d'allumage séquentiel du cercle, en secondes. */
+const STEP_DELAY = 0.12
+
 interface ParcoursProps {
-  onCta: () => void
+  /** Conservé pour compatibilité d'appel — cette section ne porte pas de CTA. */
+  onCta?: () => void
 }
 
-export function Parcours({ onCta }: ParcoursProps) {
-  const { ref, visible } = useReveal()
+export function Parcours(_props: ParcoursProps = {}) {
+  const { ref, visible } = useReveal<HTMLDivElement>(0.12)
+
+  const enter = (delay: number) => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(20px)',
+    transition: `opacity .7s var(--ease-apple) ${delay}s, transform .7s var(--ease-apple) ${delay}s`,
+  })
 
   return (
-    <section id="parcours" className="py-24 lg:py-32" ref={ref} style={{ background: "#FAFBFC" }}>
-      <div className="mx-auto max-w-4xl px-6 lg:px-12">
-
-        {/* Header */}
-        <div
-          className="mb-16"
-          style={{
-            opacity:    visible ? 1 : 0,
-            transform:  visible ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1)",
-          }}
-        >
-          <div className="section-eyebrow mb-4">Comment ça marche</div>
+    <section
+      id="parcours"
+      className="py-24 lg:py-32"
+      style={{ background: 'var(--surface)' }}
+    >
+      <div ref={ref} className="mx-auto w-full max-w-7xl px-6 lg:px-12">
+        {/* En-tête */}
+        <div className="mb-16 max-w-[620px] lg:mb-24">
+          <div className="section-eyebrow mb-4" style={enter(0)}>
+            Le parcours
+          </div>
           <h2
-            className="font-black"
-            style={{ fontSize: "clamp(30px, 4.2vw, 50px)", letterSpacing: "-1.8px", lineHeight: 1.06, color: "#1C2B35" }}
+            className="font-black tracking-tight"
+            style={{
+              fontSize: 'clamp(28px, 4vw, 46px)',
+              lineHeight: 1.08,
+              letterSpacing: '-1.6px',
+              color: 'var(--t1)',
+              ...enter(0.1),
+            }}
           >
-            Les 8 étapes du diagnostic.
-            <br />
-            <span style={{ color: "#4A7B8C" }}>Aucune question sans réponse.</span>
+            Comment ça se passe
           </h2>
-          <p className="mt-3 text-[16px]" style={{ color: "#5E7485" }}>De l'identification par SIRET à votre plan d'action — voici exactement ce qui se passe.</p>
+          <p
+            className="mt-5 text-[17px] italic leading-relaxed"
+            style={{ color: 'var(--t3)', ...enter(0.2) }}
+          >
+            Six étapes. Vous savez exactement ce qui vous attend.
+          </p>
         </div>
 
-        {/* Timeline */}
-        <div className="relative">
-          <div
-            className="absolute left-[19px] top-0 bottom-0 w-px lg:left-[23px]"
-            style={{ background: "linear-gradient(to bottom, #4A7B8C, #D5DFE5)" }}
-          />
+        {/* Workflow — 6 colonnes desktop, 3 tablette, 1 mobile */}
+        <ol className="grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-3 md:gap-y-14 lg:grid-cols-6">
+          {ETAPES.map((e, i) => {
+            const delay = i * STEP_DELAY
+            const lineDelay = delay + STEP_DELAY
+            const isLast = i === ETAPES.length - 1
+            // Fin de ligne en tablette (3 colonnes) : pas de connecteur horizontal.
+            const endsRowOnTablet = i % 3 === 2
 
-          <div className="flex flex-col gap-0">
-            {ETAPES.map((e, i) => {
-              const Icon = e.icon
-              return (
+            return (
+              <li
+                key={e.n}
+                className="relative flex gap-5 md:flex-col md:items-center md:gap-0 md:text-center"
+              >
+                {/* Connecteur vertical — mobile uniquement */}
+                {!isLast && (
+                  <svg
+                    aria-hidden="true"
+                    className="pointer-events-none absolute md:hidden"
+                    style={{ left: '23px', top: '56px', bottom: '-36px', width: '2px' }}
+                    viewBox="0 0 2 100"
+                    preserveAspectRatio="none"
+                  >
+                    <line
+                      x1="1" y1="0" x2="1" y2="100"
+                      stroke="var(--line)" strokeWidth="2"
+                    />
+                    <line
+                      x1="1" y1="0" x2="1" y2="100"
+                      stroke="var(--cleargo-navy)" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="100"
+                      strokeDashoffset={visible ? 0 : 100}
+                      style={{
+                        transition: `stroke-dashoffset .55s var(--ease-apple) ${lineDelay}s`,
+                      }}
+                    />
+                  </svg>
+                )}
+
+                {/* Connecteur horizontal — tablette et desktop */}
+                {!isLast && (
+                  <svg
+                    aria-hidden="true"
+                    className={
+                      endsRowOnTablet
+                        ? 'pointer-events-none absolute hidden lg:block'
+                        : 'pointer-events-none absolute hidden md:block'
+                    }
+                    style={{
+                      left: 'calc(50% + 30px)',
+                      width: 'calc(100% - 36px)',
+                      top: '23px',
+                      height: '2px',
+                    }}
+                    viewBox="0 0 100 2"
+                    preserveAspectRatio="none"
+                  >
+                    <line
+                      x1="0" y1="1" x2="100" y2="1"
+                      stroke="var(--line)" strokeWidth="2"
+                    />
+                    <line
+                      x1="0" y1="1" x2="100" y2="1"
+                      stroke="var(--cleargo-navy)" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="100"
+                      strokeDashoffset={visible ? 0 : 100}
+                      style={{
+                        transition: `stroke-dashoffset .55s var(--ease-apple) ${lineDelay}s`,
+                      }}
+                    />
+                  </svg>
+                )}
+
+                {/* Cercle numéroté — s'allume séquentiellement */}
                 <div
-                  key={e.num}
-                  className="relative flex gap-8 pb-10"
+                  className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
                   style={{
-                    opacity:    visible ? 1 : 0,
-                    transform:  visible ? "translateX(0)" : "translateX(-16px)",
-                    transition: `all 0.7s cubic-bezier(0.25,0.1,0.25,1) ${i * 60}ms`,
+                    backgroundColor: visible ? 'var(--cleargo-navy)' : 'var(--white)',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: visible ? 'var(--cleargo-navy)' : 'var(--line)',
+                    transition: `background-color .5s var(--ease-apple) ${delay}s, border-color .5s var(--ease-apple) ${delay}s`,
                   }}
                 >
-                  {/* Step circle */}
-                  <div className="relative z-10 flex-shrink-0">
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-sm lg:h-12 lg:w-12"
-                      style={{ background: e.accent }}
-                    >
-                      <Icon className="h-4 w-4 text-white lg:h-5 lg:w-5" strokeWidth={2.5} />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 pb-2">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-black tracking-[0.2em]" style={{ color: "#B5C5CF" }}>{e.num}</span>
-                      <span
-                        className="rounded-full px-3 py-0.5 text-[11px] font-black"
-                        style={{ background: `${e.accent}18`, color: e.accent, border: `1px solid ${e.accent}35` }}
-                      >
-                        {e.tag}
-                      </span>
-                    </div>
-                    <h3 className="text-[16px] font-black leading-tight" style={{ color: "#1C2B35" }}>{e.title}</h3>
-                    <p className="mt-0.5 text-[12px] font-semibold" style={{ color: e.accent }}>{e.time}</p>
-                    <p className="mt-2 text-[13px] leading-relaxed" style={{ color: "#5E7485" }}>{e.description}</p>
-
-                    {e.livrable && (
-                      <div
-                        className="mt-3 inline-flex items-start gap-2 rounded-lg border px-4 py-2.5"
-                        style={{ borderColor: `${e.accent}30`, background: `${e.accent}0C` }}
-                      >
-                        <span className="mt-0.5 flex-shrink-0 text-[10px] font-black uppercase tracking-wider" style={{ color: e.accent }}>
-                          Livrable
-                        </span>
-                        <span className="text-[12px] leading-relaxed" style={{ color: "#5E7485" }}>{e.livrable}</span>
-                      </div>
-                    )}
-                  </div>
+                  <span
+                    className="num text-[15px] font-bold"
+                    style={{
+                      color: visible ? '#FFFFFF' : 'var(--t4)',
+                      transition: `color .5s var(--ease-apple) ${delay}s`,
+                    }}
+                  >
+                    {e.n}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
-        </div>
 
-        {/* CTA banner */}
-        <div
-          className="mt-8 rounded-2xl px-8 py-8 lg:px-12 text-center"
-          style={{
-            background: "#1C2B35",
-            opacity:    visible ? 1 : 0,
-            transform:  visible ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.55s",
-          }}
-        >
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-4 py-1.5" style={{ borderColor: "rgba(74,123,140,0.4)", background: "rgba(74,123,140,0.1)" }}>
-            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6AABB8" }}>Compliance as a Service</span>
-          </div>
-          <p className="text-[17px] font-bold mb-2 text-white/70">
-            La préqualification, c'est maintenant — c'est gratuit.
-          </p>
-          <p className="text-[16px] font-bold text-white mb-6">
-            Identifiez votre entreprise par SIRET et démarrez en 5 minutes.
-          </p>
-          <button
-            onClick={onCta}
-            data-cta
-            className="btn-press inline-flex items-center gap-2 rounded-lg px-8 py-4 text-[15px] font-bold text-white"
-            style={{ background: "#4A7B8C", boxShadow: "0 6px 28px -4px rgba(74,123,140,0.4)" }}
-          >
-            Identifier mon entreprise →
-          </button>
-          <p className="mt-3 text-[12px] text-white/35">Transporteurs uniquement · Sans engagement</p>
-        </div>
+                {/* Contenu */}
+                <div
+                  className="min-w-0 md:mt-5 md:flex md:flex-col md:items-center"
+                  style={enter(0.25 + delay)}
+                >
+                  <ClearGoIcon
+                    name={e.icon}
+                    size={28}
+                    className="mb-3"
+                    style={{ color: 'var(--cleargo-navy)' }}
+                  />
+                  <h3
+                    className="text-[15px] font-bold leading-snug tracking-tight"
+                    style={{ color: 'var(--t1)', letterSpacing: '-0.3px' }}
+                  >
+                    {e.title}
+                  </h3>
+                  <p
+                    className="mt-1.5 text-[13.5px] leading-relaxed"
+                    style={{ color: 'var(--t4)' }}
+                  >
+                    {e.sub}
+                  </p>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
       </div>
     </section>
   )
