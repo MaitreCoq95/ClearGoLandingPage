@@ -7,6 +7,8 @@ import { KeyFigure } from '@/components/landing/key-figure'
 import { Problems } from '@/components/landing/problems'
 import { Benefits } from '@/components/landing/benefits'
 import { Parcours } from '@/components/landing/parcours'
+import { Echantillonnage } from '@/components/landing/echantillonnage'
+import { SuiviContinu } from '@/components/landing/suivi-continu'
 import { CoutControle } from '@/components/landing/cout-controle'
 import { Maturite } from '@/components/landing/maturite'
 import { NiveauxExigence } from '@/components/landing/niveaux-exigence'
@@ -45,6 +47,8 @@ function LandingContent() {
       <Problems />
       <Benefits />
       <Parcours />
+      <Echantillonnage />
+      <SuiviContinu />
       <CoutControle />
       <Maturite />
       <NiveauxExigence />

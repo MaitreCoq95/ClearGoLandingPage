@@ -57,6 +57,32 @@ async function notifyByEmail(payload: Record<string, unknown>, reason: string) {
   })
 }
 
+/**
+ * N'accepte qu'un chemin interne. Une URL absolue renvoyée par l'amont — ou un
+ * `//evil.com` que le navigateur traite comme protocol-relative — ouvrirait une
+ * redirection arbitraire depuis notre domaine.
+ */
+function safeRedirect(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  if (!value.startsWith('/')) return null
+  if (value.startsWith('//') || value.startsWith('/\\')) return null
+  return value
+}
+
+/** Périmètre d'analyse, reconstruit champ par champ et borné. */
+function safePerimetre(value: unknown): { referentiels: string[]; nb_domaines: number } | null {
+  if (typeof value !== 'object' || value === null) return null
+  const p = value as Record<string, unknown>
+
+  const referentiels = Array.isArray(p.referentiels)
+    ? p.referentiels.filter((r): r is string => typeof r === 'string').slice(0, 12)
+    : []
+  const nbDomaines = typeof p.nb_domaines === 'number' ? p.nb_domaines : 0
+
+  if (referentiels.length === 0 && nbDomaines === 0) return null
+  return { referentiels, nb_domaines: nbDomaines }
+}
+
 export async function POST(req: Request) {
   let body: Record<string, unknown>
   try {
@@ -107,6 +133,9 @@ export async function POST(req: Request) {
           status: 'ok',
           urgence_licence:
             typeof data.urgence_licence === 'number' ? data.urgence_licence : null,
+          compte_cree: data.compte_cree === true,
+          redirect_url: safeRedirect(data.redirect_url),
+          perimetre: safePerimetre(data.perimetre),
         })
       }
     } catch {
@@ -121,5 +150,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ status: 'error', error: 'Erreur interne' }, { status: 500 })
   }
 
-  return NextResponse.json({ status: 'ok', urgence_licence: null })
+  // Sans La Bergerie, pas de compte ni de périmètre : l'écran de sortie le gère.
+  return NextResponse.json({
+    status: 'ok',
+    urgence_licence: null,
+    compte_cree: false,
+    redirect_url: null,
+    perimetre: null,
+  })
 }

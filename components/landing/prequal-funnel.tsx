@@ -79,6 +79,15 @@ interface RegistryData {
 
 type SiretStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'unavailable'
 
+/** Réponse de /api/qualify — déjà assainie côté serveur. */
+interface QualifyResult {
+  status: string
+  urgence_licence: number | null
+  compte_cree: boolean
+  redirect_url: string | null
+  perimetre: { referentiels: string[]; nb_domaines: number } | null
+}
+
 // ── Composant ───────────────────────────────────────────────────────────────
 
 interface PrequalFunnelProps {
@@ -105,6 +114,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
   const [telephone, setTelephone] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(false)
+  const [qualification, setQualification] = useState<QualifyResult | null>(null)
 
   const digits = siret.replace(/\D/g, '')
   const joursAvantExpiration = registry?.jours_avant_expiration ?? null
@@ -127,6 +137,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
     setTelephone('')
     setSending(false)
     setSendError(false)
+    setQualification(null)
   }, [])
 
   // Verrouille le scroll pendant l'ouverture
@@ -248,8 +259,9 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
           q_urgence: answers.urgence ?? '',
         }),
       })
-      const json = await res.json()
+      const json = (await res.json()) as QualifyResult
       if (json.status !== 'ok') throw new Error('refused')
+      setQualification(json)
       setPhase('sortie')
     } catch {
       setSendError(true)
@@ -647,8 +659,11 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
           {phase === 'sortie' && (
             <SortieConditionnelle
               niveau={niveauUrgence}
-              licenceUrgente={licenceUrgente}
-              jours={joursAvantExpiration}
+              // Le registre peut n'avoir rien renvoyé alors que La Bergerie a
+              // retrouvé le prospect au moment de la qualification : on prend
+              // alors l'échéance qu'elle nous remonte.
+              jours={joursAvantExpiration ?? qualification?.urgence_licence ?? null}
+              result={qualification}
               onClose={onClose}
             />
           )}
@@ -716,15 +731,115 @@ function ActionButton({
 
 function SortieConditionnelle({
   niveau,
-  licenceUrgente,
   jours,
+  result,
   onClose,
 }: {
   niveau: 'urgent_chaud' | 'tiede' | 'froid'
-  licenceUrgente: boolean
   jours: number | null
+  result: QualifyResult | null
   onClose: () => void
 }) {
+  const perimetre = result?.perimetre ?? null
+  const redirectUrl = result?.redirect_url ?? null
+  const licenceUrgente = jours !== null && jours < LICENCE_URGENCE_JOURS
+
+  // Première preuve concrète : ClearGo montre qu'il sait de quoi il parle
+  // avant de demander quoi que ce soit de plus.
+  if (perimetre) {
+    return (
+      <div style={{ animation: 'fadeUp .35s var(--ease-apple) both' }}>
+        <div
+          className="mb-5 flex items-center gap-3 rounded-xl p-4"
+          style={{ background: 'var(--green-pale)' }}
+        >
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+            style={{ background: 'var(--green)' }}
+          >
+            <IconCheck />
+          </span>
+          <p className="text-[13.5px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
+            Votre périmètre est défini.
+          </p>
+        </div>
+
+        <p className="text-[15px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+          ClearGo analysera votre entreprise sur{' '}
+          <span className="num font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+            {perimetre.nb_domaines}
+          </span>{' '}
+          domaines réglementaires, répartis sur{' '}
+          <span className="num font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+            {perimetre.referentiels.length}
+          </span>{' '}
+          {perimetre.referentiels.length > 1 ? 'référentiels' : 'référentiel'} :
+        </p>
+
+        <ul className="mt-4 flex flex-col gap-2">
+          {perimetre.referentiels.map((r) => (
+            <li
+              key={r}
+              className="flex items-center gap-3 rounded-lg px-4 py-3"
+              style={{ background: 'var(--surface)' }}
+            >
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: 'var(--green)' }}
+              />
+              <span className="text-[14px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
+                {r}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        {licenceUrgente && jours !== null && (
+          <div
+            className="mt-4 flex gap-3 rounded-xl border p-4"
+            style={{ borderColor: 'rgba(249,115,22,0.4)', background: 'rgba(249,115,22,0.07)' }}
+          >
+            <ClearGoIcon name="expiration" size={20} className="mt-0.5 shrink-0" />
+            <p className="text-[13px]" style={{ color: 'var(--t3)' }}>
+              Votre licence de transport expire dans{' '}
+              <span className="num font-bold" style={{ color: 'var(--cleargo-navy)' }}>{jours}</span>{' '}
+              jours : nous traitons votre demande en priorité.
+            </p>
+          </div>
+        )}
+
+        <p className="mt-5 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+          Prochaine étape : nous avons besoin de connaître la taille de votre parc pour préparer
+          votre liste de documents.
+        </p>
+
+        {redirectUrl ? (
+          <a
+            href={redirectUrl}
+            className="btn-press mt-5 block w-full rounded-xl px-5 py-3.5 text-center text-[15px] font-extrabold text-white"
+            style={{ background: 'var(--green)' }}
+          >
+            Continuer →
+          </a>
+        ) : (
+          <p className="mt-5 rounded-xl px-4 py-3 text-[13px]" style={{ background: 'var(--surface)', color: 'var(--t3)' }}>
+            Votre espace est en cours d’ouverture. Nous vous envoyons le lien par email.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 w-full rounded-xl py-3 text-[13px] font-semibold"
+          style={{ color: 'var(--t4)' }}
+        >
+          Fermer
+        </button>
+      </div>
+    )
+  }
+
   const titre =
     niveau === 'urgent_chaud'
       ? 'Votre profil correspond à un besoin immédiat.'

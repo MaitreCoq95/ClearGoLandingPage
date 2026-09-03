@@ -375,6 +375,59 @@ export function ProfilConformite() {
                   </div>
                 ))}
               </div>
+
+              {/* Ce qui sort du profil, et ce qui n'en sort jamais. */}
+              <div
+                className="mt-6 grid gap-px overflow-hidden rounded-lg sm:grid-cols-2"
+                style={{ background: 'var(--line)', border: '1px solid var(--line)' }}
+              >
+                <div className="bg-white p-4">
+                  <p
+                    className="mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.12em]"
+                    style={{ color: 'var(--green-text)' }}
+                  >
+                    Ce qu’ils voient
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {[
+                      'Votre score et votre palier',
+                      'La date de votre dernière évaluation',
+                      'Votre taux de réponse aux vérifications',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] leading-snug" style={{ color: 'var(--t3)' }}>
+                        <span aria-hidden="true" className="mt-[7px] h-1 w-1 shrink-0 rounded-full" style={{ background: 'var(--green)' }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white p-4">
+                  <p
+                    className="mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.12em]"
+                    style={{ color: 'var(--t4)' }}
+                  >
+                    Ce qu’ils ne voient jamais
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {[
+                      'Le détail de vos écarts',
+                      'Vos documents',
+                      'Vos actions en cours',
+                      'Vos conducteurs et vos immatriculations',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] leading-snug" style={{ color: 'var(--t3)' }}>
+                        <span aria-hidden="true" className="mt-[9px] h-px w-2.5 shrink-0" style={{ background: 'var(--t5, #94A3B8)' }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <p className="mt-3.5 text-[13px]" style={{ color: 'var(--t4)' }}>
+                Vous pouvez couper le partage à tout moment depuis vos paramètres.
+              </p>
             </div>
           </div>
         </div>
