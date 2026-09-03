@@ -4,54 +4,59 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ── Backgrounds ─────────────────────────────────────────────────────────── */
-  --bg0: #FAFBFC;
-  --bg1: #F5F7F8;
-  --bg2: #EEF2F4;
-  --bg3: #E8EEF1;
+  /* ── ClearGo brand ───────────────────────────────────────────────────────── */
+  --cleargo-navy:       #0D2B5E;   /* structure, autorité, titres */
+  --cleargo-navy-light: #1A3A73;
+  --green:              #27AE60;   /* progression, validation, CTA */
+  --green-light:        #2ECC71;
+  --green-pale:         #E8F8F0;
+  /* Vert assombri pour le texte sur fond clair — contraste AA (4.7:1) */
+  --green-text:         #1E8449;
+  --reglo-orange:       #F97316;
 
-  /* ── Text ────────────────────────────────────────────────────────────────── */
-  --t1: #1C2B35;
-  --t2: #3A4E5A;
-  --t3: #5E7485;
-  --t4: #8FA4B2;
-  --t5: #B5C5CF;
+  /* ── Surfaces ────────────────────────────────────────────────────────────── */
+  --white:    #FFFFFF;
+  --surface:  #F4F6FA;   /* fond de section alternée */
+  --surface-2:#EBEFF6;
 
-  /* ── Brand ───────────────────────────────────────────────────────────────── */
-  --blue:       #4A7B8C;
-  --blue-hover: #3d6a7a;
-  --blue-l:     #6AABB8;
-  --blue-xl:    #A8C8D4;
-  --blue-bg:    #EEF2F4;
-  --copper:     #A87055;
-  --copper-hover: #935f44;
-  --green:      #5E9E80;
+  /* ── Texte ───────────────────────────────────────────────────────────────── */
+  --t1: #0D2B5E;   /* titres */
+  --t2: #2D3D53;   /* corps appuyé */
+  --t3: #4A5568;   /* corps */
+  --t4: #64748B;   /* secondaire — AA sur blanc */
+  --t5: #94A3B8;   /* décoratif uniquement, jamais du texte porteur de sens */
 
-  /* ── Lines ───────────────────────────────────────────────────────────────── */
-  --line:   #D5DFE5;
-  --line-l: #ECF1F4;
+  /* ── Lignes ──────────────────────────────────────────────────────────────── */
+  --line:   #E2E8F0;
+  --line-l: #EFF3F8;
+
+  /* ── Paliers de maturité ─────────────────────────────────────────────────── */
+  --score-insuffisant:  #E74C3C;
+  --score-construction: #E67E22;
+  --score-maitrise:     #27AE60;
+  --score-excellence:   #8E44AD;
 
   /* ── shadcn/ui tokens ────────────────────────────────────────────────────── */
-  --background: var(--bg0);
-  --foreground:  var(--t1);
-  --card:        #FFFFFF;
+  --background: var(--white);
+  --foreground: var(--t1);
+  --card:       #FFFFFF;
   --card-foreground: var(--t1);
-  --popover:     #FFFFFF;
+  --popover:    #FFFFFF;
   --popover-foreground: var(--t1);
-  --primary:     var(--blue);
+  --primary:    var(--cleargo-navy);
   --primary-foreground: #FFFFFF;
-  --secondary:   var(--bg1);
+  --secondary:  var(--surface);
   --secondary-foreground: var(--t1);
-  --muted:       var(--bg1);
-  --muted-foreground: var(--t3);
-  --accent:      var(--blue);
+  --muted:      var(--surface);
+  --muted-foreground: var(--t4);
+  --accent:     var(--green);
   --accent-foreground: #FFFFFF;
-  --destructive: #DC2626;
+  --destructive: var(--score-insuffisant);
   --destructive-foreground: #FFFFFF;
-  --border:      var(--line);
-  --input:       var(--line);
-  --ring:        var(--blue);
-  --radius:      0.625rem;
+  --border:     var(--line);
+  --input:      var(--line);
+  --ring:       var(--green);
+  --radius:     0.75rem;
 
   /* ── Timing functions ────────────────────────────────────────────────────── */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -62,9 +67,9 @@
 }
 
 @theme inline {
-  --font-sans:  'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-serif: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-mono:  'Geist Mono', monospace;
+  --font-sans:  'Inter', system-ui, sans-serif;
+  --font-serif: 'Inter', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -97,13 +102,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: #4A7B8C;
+    background: var(--green);
     color: white;
   }
 }
@@ -112,31 +117,26 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Chiffres : toujours en JetBrains Mono ───────────────────────────────── */
+.num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
 /* ── Animations ─────────────────────────────────────────────────────────── */
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(32px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-@keyframes scaleUp {
-  from { opacity: 0; transform: scale(0.92) translateY(16px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
-}
-@keyframes slideRight {
-  from { opacity: 0; transform: translateX(-24px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideLeft {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes slideDownModal {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }
@@ -146,44 +146,12 @@ html {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.35; transform: scale(1.7); }
 }
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes score-ring {
-  from { stroke-dashoffset: 502; }
-  to   { stroke-dashoffset: var(--ring-offset); }
-}
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
 
 /* ── Utility classes ────────────────────────────────────────────────────── */
 
-.blue-stripe {
-  height: 3px;
-  background: #4A7B8C;
-  width: 100%;
-}
-
-.teal-stripe {
-  height: 3px;
-  background: #4A7B8C;
-  width: 100%;
-}
-
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
+  transform: translateY(20px);
   transition: opacity 0.7s var(--ease-apple), transform 0.7s var(--ease-apple);
 }
 .reveal.visible {
@@ -192,24 +160,27 @@ html {
 }
 
 .btn-press {
-  transition: transform 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-smooth);
+  transition: transform 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-smooth),
+              background-color 0.15s var(--ease-smooth);
 }
 .btn-press:hover  { transform: translateY(-2px); }
 .btn-press:active { transform: translateY(0) scale(0.97); }
 
-.card-lift {
-  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-smooth);
+/* Card ClearGo — bordure fine, ombre quasi nulle. Pas de glassmorphism. */
+.cg-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(13, 43, 94, 0.05);
 }
-.card-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 60px -12px rgba(74, 123, 140, 0.12);
+.cg-card--lift {
+  transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth),
+              border-color 0.25s var(--ease-smooth);
 }
-
-.text-gradient-blue {
-  background: linear-gradient(135deg, #4A7B8C 0%, #6AABB8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.cg-card--lift:hover {
+  transform: translateY(-2px);
+  border-color: rgba(39, 174, 96, 0.35);
+  box-shadow: 0 6px 20px -8px rgba(13, 43, 94, 0.12);
 }
 
 .section-eyebrow {
@@ -220,20 +191,31 @@ html {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #4A7B8C;
+  color: var(--green-text);
 }
 .section-eyebrow::before {
   content: '';
   display: block;
   width: 14px;
   height: 2px;
-  background: #4A7B8C;
+  background: var(--green);
   border-radius: 2px;
 }
-
-.section-eyebrow--copper {
-  color: #A87055;
+.section-eyebrow--on-navy {
+  color: var(--green-light);
 }
-.section-eyebrow--copper::before {
-  background: #A87055;
+
+/* ── prefers-reduced-motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
 }
