@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/hero-cleargo.png',
+        url: '/images/og-cleargo.webp',
         width: 1200,
         height: 630,
         alt: 'ClearGo — évaluation de la conformité des transporteurs routiers',
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'ClearGo — Évaluez et prouvez votre conformité transport',
     description: DESCRIPTION,
-    images: ['/images/hero-cleargo.png'],
+    images: ['/images/og-cleargo.webp'],
   },
 }
 

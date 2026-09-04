@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { ClearGoIcon, type ClearGoIconName } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
@@ -15,11 +16,16 @@ type Univers = {
   icone: ClearGoIconName
   description: string
   referentiels: string[]
+  /** Absente tant que la photo du secteur n'est pas produite. */
+  photo?: string
+  alt?: string
 }
 
 const UNIVERS: Univers[] = [
   {
     id: 'agroalimentaire',
+    photo: '/images/univers-agro.webp',
+    alt: 'Quai de chargement frigorifique, vapeur froide séchappant de la remorque',
     titre: 'Température dirigée — Agroalimentaire',
     icone: 'ifs',
     description:
@@ -36,6 +42,8 @@ const UNIVERS: Univers[] = [
   },
   {
     id: 'dernier-kilometre',
+    photo: '/images/univers-dernier-km.webp',
+    alt: 'Livraison urbaine en double file dans une rue parisienne encombrée',
     titre: 'Dernier kilomètre & décarbonation',
     icone: 'critair-zfe',
     description:
@@ -44,6 +52,8 @@ const UNIVERS: Univers[] = [
   },
   {
     id: 'international',
+    photo: '/images/univers-international.webp',
+    alt: 'Ensemble routier européen sur une cour de dépôt à l’heure bleue',
     titre: 'International',
     icone: 'oea-douane',
     description:
@@ -53,6 +63,8 @@ const UNIVERS: Univers[] = [
   // TODO: wording "Break bulk" à valider avec Wyssam
   {
     id: 'break-bulk',
+    photo: '/images/univers-break-bulk.webp',
+    alt: 'Convoi exceptionnel escorté sur une route secondaire',
     titre: 'Break bulk & opérations hors flux standard',
     icone: 'transport-exceptionnel',
     description:
@@ -63,7 +75,23 @@ const UNIVERS: Univers[] = [
 
 function UniversContenu({ univers }: { univers: Univers }) {
   return (
-    <div>
+    <div className={univers.photo ? 'grid gap-7 md:grid-cols-[minmax(0,300px)_1fr] md:items-start' : undefined}>
+      {univers.photo && (
+        <div
+          className="relative overflow-hidden rounded-xl"
+          style={{ aspectRatio: '1 / 1', border: '1px solid var(--line)' }}
+        >
+          <Image
+            src={univers.photo}
+            alt={univers.alt ?? ''}
+            fill
+            sizes="(max-width: 768px) 92vw, 300px"
+            className="object-cover"
+          />
+        </div>
+      )}
+
+      <div>
       <div className="flex items-start gap-4">
         <ClearGoIcon
           name={univers.icone}
@@ -105,6 +133,7 @@ function UniversContenu({ univers }: { univers: Univers }) {
             </span>
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ClearGoIcon, type ClearGoIconName } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
 
@@ -7,21 +8,29 @@ interface Douleur {
   icon: ClearGoIconName
   title: string
   body: string
+  photo: string
+  alt: string
 }
 
 const DOULEURS: Douleur[] = [
   {
     icon: 'niveau',
+    photo: '/images/douleur-visibilite.webp',
+    alt: 'Bureau d\u2019exploitation encombr\u00e9 de classeurs et de papiers',
     title: 'Vous naviguez à l’aveugle',
     body: 'Vous avez des documents, des pratiques et des habitudes de travail. Mais pas de vision d’ensemble de ce qui est réellement maîtrisé, de ce qui doit être corrigé, et de ce que vous pouvez valoriser.',
   },
   {
     icon: 'donneur-ordres',
+    photo: '/images/douleur-savoir-faire.webp',
+    alt: 'Conducteur exp\u00e9riment\u00e9 sanglant un chargement dans une remorque',
     title: 'Votre savoir-faire reste invisible',
     body: 'Vous savez travailler. Mais votre niveau réel est difficile à lire depuis l’extérieur. Vous restez parfois cantonné à des relations de sous-traitance alors que vos compétences pourraient vous permettre d’aller plus loin.',
   },
   {
     icon: 'controleur-dreal',
+    photo: '/images/douleur-controle.webp',
+    alt: 'Contr\u00f4le routier en bord de route, agent en gilet haute visibilit\u00e9',
     title: 'Vous subissez les contrôles au lieu de les anticiper',
     body: 'Chaque contrôle est une surprise. Les documents sont cherchés dans l’urgence. Ce qui manque se découvre trop tard.',
   },
@@ -87,11 +96,16 @@ function DouleurRow({ douleur, index }: { douleur: Douleur; index: number }) {
         className={reversed ? 'lg:order-1' : 'lg:order-2'}
         style={enter(0.14)}
       >
-        <div className="cg-card flex items-center justify-center px-8 py-12 lg:py-16">
-          <ClearGoIcon
-            name={douleur.icon}
-            size={104}
-            style={{ color: 'var(--cleargo-navy)' }}
+        <div
+          className="relative overflow-hidden rounded-xl"
+          style={{ aspectRatio: '1 / 1', border: '1px solid var(--line)' }}
+        >
+          <Image
+            src={douleur.photo}
+            alt={douleur.alt}
+            fill
+            sizes="(max-width: 1024px) 92vw, 520px"
+            className="object-cover"
           />
         </div>
       </div>

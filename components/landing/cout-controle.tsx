@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useReveal } from '@/hooks/use-reveal'
 
 /**
@@ -31,10 +32,31 @@ export function CoutControle() {
   return (
     <section
       id="cout-controle"
-      className="py-24 lg:py-28"
+      className="relative py-24 lg:py-28"
       style={{ background: 'var(--cleargo-navy)' }}
     >
-      <div ref={ref} className="mx-auto w-full max-w-4xl px-6 lg:px-12">
+      {/* La photo est ancrée à droite : le carré 1:1 recadré en pleine largeur
+          ne lisait plus comme une image. Le texte reste sur du navy plein. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-y-0 right-0 w-full sm:w-[68%]">
+          <Image
+            src="/images/controle-nuit.webp"
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 68vw"
+            className="object-cover"
+            style={{ objectPosition: 'center 62%', opacity: 0.55 }}
+          />
+        </div>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, var(--cleargo-navy) 0%, var(--cleargo-navy) 26%, rgba(13,43,94,.88) 48%, rgba(13,43,94,.62) 100%)',
+          }}
+        />
+      </div>
+      <div ref={ref} className="relative mx-auto w-full max-w-4xl px-6 lg:px-12">
         <div className="section-eyebrow section-eyebrow--on-navy mb-5" style={enter(0)}>
           Contrôle en entreprise ou sur route
         </div>

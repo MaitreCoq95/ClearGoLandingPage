@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
 
@@ -191,64 +192,66 @@ export function Hero({ onCta }: HeroProps) {
               transition: 'opacity .9s var(--ease-apple) .2s, transform .9s var(--ease-apple) .2s',
             }}
           >
-            <div className="w-full max-w-[360px]">
-              <div className="cg-card p-7">
+            <div className="mx-auto w-full max-w-[460px]">
+              <div className="relative lg:pb-20">
+              {/* La photo porte le hero ; la carte de score s'y pose. */}
+              <div
+                className="relative overflow-hidden rounded-2xl"
+                style={{ aspectRatio: '1 / 1', boxShadow: '0 1px 3px rgba(13,43,94,.10)' }}
+              >
+                <Image
+                  src="/images/hero-transporteur.webp"
+                  alt="Dirigeante d’une entreprise de transport routier devant sa flotte"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 92vw, 460px"
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Chevauche le bas-gauche de la photo, là où la cour est vide. */}
+              <div className="cg-card mx-auto -mt-14 w-[280px] p-5 lg:absolute lg:bottom-0 lg:left-0 lg:mx-0 lg:mt-0">
                 <div className="mb-1 flex items-center justify-between">
                   <span
-                    className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                    className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
                     style={{ color: 'var(--t4)' }}
                   >
                     ClearGo Score
                   </span>
-                  <ClearGoIcon
-                    name="cleargo-score"
-                    size={20}
-                    style={{ color: 'var(--cleargo-navy)' }}
-                  />
+                  <ClearGoIcon name="cleargo-score" size={18} style={{ color: 'var(--cleargo-navy)' }} />
                 </div>
 
-                <div className="mx-auto" style={{ width: 250, height: 250 }}>
+                <div className="mx-auto" style={{ width: 182, height: 182 }}>
                   <ScoreRing animated={ringVisible} />
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div
-                    className="rounded-xl px-4 py-3"
-                    style={{ background: 'var(--surface)' }}
-                  >
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--cleargo-navy)' }} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
-                        Réglo
-                      </span>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-lg px-3 py-2" style={{ background: 'var(--surface)' }}>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
+                      Réglo
                     </div>
-                    <div className="num text-[17px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
-                      418<span className="text-[11px] font-medium" style={{ color: 'var(--t4)' }}>/500</span>
+                    <div className="num text-[15px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+                      418<span className="text-[10px] font-medium" style={{ color: 'var(--t4)' }}>/500</span>
                     </div>
                   </div>
-                  <div
-                    className="rounded-xl px-4 py-3"
-                    style={{ background: 'var(--green-pale)' }}
-                  >
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--green)' }} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--green-text)' }}>
-                        Excellence
-                      </span>
+                  <div className="rounded-lg px-3 py-2" style={{ background: 'var(--green-pale)' }}>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider" style={{ color: 'var(--green-text)' }}>
+                      Excellence
                     </div>
-                    <div className="num text-[17px] font-bold" style={{ color: 'var(--green-text)' }}>
-                      402<span className="text-[11px] font-medium" style={{ color: 'var(--t4)' }}>/500</span>
+                    <div className="num text-[15px] font-bold" style={{ color: 'var(--green-text)' }}>
+                      402<span className="text-[10px] font-medium" style={{ color: 'var(--t4)' }}>/500</span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              </div>
+
               {/* Réglo — petit, en accompagnement, jamais dominant */}
-              <div className="mt-4 flex items-center gap-3 px-1">
-                <ClearGoIcon name="reglo" size={40} className="shrink-0" />
+              <div className="mt-5 flex items-center gap-3 px-1">
+                <ClearGoIcon name="reglo" size={34} className="shrink-0" />
                 <p className="text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
-                  Exemple de restitution. Votre score dépend du périmètre réellement
-                  applicable à votre activité.
+                  Exemple de restitution. Votre score dépend du périmètre applicable à votre activité.
                 </p>
               </div>
             </div>
