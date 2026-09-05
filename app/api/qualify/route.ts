@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { bergerieHeaders } from '@/lib/bergerie'
 
 /**
  * Qualification d'un prospect depuis la landing.
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
         `${BERGERIE_API_URL.replace(/\/$/, '')}/api/bergerie/landing/qualify/`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          headers: bergerieHeaders(req, { 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(8000),
         },

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { bergerieHeaders, clientIp } from '@/lib/bergerie'
 
 /**
  * Vérification d'un SIRET au registre national des transporteurs (GRECO).
@@ -49,12 +50,6 @@ function isRateLimited(ip: string): boolean {
   return recent.length > MAX_PER_WINDOW
 }
 
-function clientIp(req: Request): string {
-  const fwd = req.headers.get('x-forwarded-for')
-  if (fwd) return fwd.split(',')[0]!.trim()
-  return req.headers.get('x-real-ip') ?? 'unknown'
-}
-
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ siret: string }> },
@@ -80,7 +75,7 @@ export async function GET(
     const upstream = await fetch(
       `${BERGERIE_API_URL.replace(/\/$/, '')}/api/bergerie/landing/verify-siret/${siret}/`,
       {
-        headers: { Accept: 'application/json' },
+        headers: bergerieHeaders(req),
         signal: AbortSignal.timeout(6000),
         cache: 'no-store',
       },

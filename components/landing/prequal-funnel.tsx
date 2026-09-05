@@ -11,6 +11,7 @@ import {
   parseFleetSize,
 } from '@/config/funnel-questions'
 import {
+  APP_BASE_URL,
   CALENDLY_URL,
   ESPACE_CLEARGO_URL,
   GUIDE_CONFORMITE_URL,
@@ -741,7 +742,14 @@ function SortieConditionnelle({
   onClose: () => void
 }) {
   const perimetre = result?.perimetre ?? null
-  const redirectUrl = result?.redirect_url ?? null
+
+  /*
+   * La Bergerie renvoie un chemin relatif — le proxy refuse toute URL absolue.
+   * Mais l'onboarding vit sur l'espace client, pas sur la landing : sans base
+   * configurée, « /onboarding/populations » tomberait sur notre 404.
+   */
+  const redirectPath = result?.redirect_url ?? null
+  const redirectUrl = redirectPath && APP_BASE_URL ? `${APP_BASE_URL}${redirectPath}` : null
   const licenceUrgente = jours !== null && jours < LICENCE_URGENCE_JOURS
 
   // Première preuve concrète : ClearGo montre qu'il sait de quoi il parle
