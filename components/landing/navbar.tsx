@@ -71,7 +71,7 @@ export function Navbar({ onCta }: NavbarProps) {
               onClick={onCta}
               data-cta
               className="btn-press ml-2 rounded-lg px-5 py-2.5 text-[13.5px] font-bold text-white"
-              style={{ background: 'var(--green)' }}
+              style={{ background: 'var(--green-cta)' }}
             >
               Évaluer mon profil →
             </button>
@@ -120,7 +120,7 @@ export function Navbar({ onCta }: NavbarProps) {
             }}
             data-cta
             className="mt-4 block w-full rounded-lg py-3.5 text-center text-[14.5px] font-bold text-white"
-            style={{ background: 'var(--green)' }}
+            style={{ background: 'var(--green-cta)' }}
           >
             Évaluer mon profil →
           </button>

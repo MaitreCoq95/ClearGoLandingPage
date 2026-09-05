@@ -149,7 +149,7 @@ export function ProfilConformite() {
                     <span
                       aria-hidden="true"
                       className="h-2 w-2 rounded-full"
-                      style={{ background: 'var(--green)' }}
+                      style={{ background: 'var(--green-cta)' }}
                     />
                     <span
                       className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
@@ -214,7 +214,7 @@ export function ProfilConformite() {
                 </div>
                 <span
                   className="shrink-0 rounded-full px-4 py-2 text-[11.5px] font-bold uppercase tracking-[0.1em] text-white"
-                  style={{ background: 'var(--score-maitrise)' }}
+                  style={{ background: 'var(--score-maitrise-text)' }}
                 >
                   Maîtrisé
                 </span>
@@ -261,7 +261,7 @@ export function ProfilConformite() {
                     <span
                       aria-hidden="true"
                       className="h-2.5 w-2.5 rounded-full"
-                      style={{ background: 'var(--green)' }}
+                      style={{ background: 'var(--green-cta)' }}
                     />
                     <span
                       className="text-[10px] font-bold uppercase tracking-wider"
@@ -364,7 +364,7 @@ export function ProfilConformite() {
                     <span
                       aria-hidden="true"
                       className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ background: 'var(--green)' }}
+                      style={{ background: 'var(--green-cta)' }}
                     />
                     <p className="text-[13.5px] leading-snug">
                       <span className="font-bold" style={{ color: 'var(--t1)' }}>
@@ -395,7 +395,7 @@ export function ProfilConformite() {
                       'Votre taux de réponse aux vérifications',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2 text-[13px] leading-snug" style={{ color: 'var(--t3)' }}>
-                        <span aria-hidden="true" className="mt-[7px] h-1 w-1 shrink-0 rounded-full" style={{ background: 'var(--green)' }} />
+                        <span aria-hidden="true" className="mt-[7px] h-1 w-1 shrink-0 rounded-full" style={{ background: 'var(--green-cta)' }} />
                         {item}
                       </li>
                     ))}

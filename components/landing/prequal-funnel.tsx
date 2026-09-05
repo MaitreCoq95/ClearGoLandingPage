@@ -337,7 +337,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
               className="h-full"
               style={{
                 width: `${progress}%`,
-                background: 'var(--green)',
+                background: 'var(--green-cta)',
                 transition: 'width .45s var(--ease-smooth)',
               }}
             />
@@ -459,7 +459,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                       type="button"
                       onClick={() => setPhase('questions')}
                       className="btn-press rounded-xl px-5 py-3 text-[14px] font-bold text-white sm:flex-1"
-                      style={{ background: 'var(--green)' }}
+                      style={{ background: 'var(--green-cta)' }}
                     >
                       Continuer →
                     </button>
@@ -573,7 +573,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                   disabled={multiSelection.length === 0}
                   onClick={() => (step < TOTAL_Q - 1 ? setStep(step + 1) : setPhase('contact'))}
                   className="btn-press mt-4 w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
-                  style={{ background: 'var(--green)' }}
+                  style={{ background: 'var(--green-cta)' }}
                 >
                   Continuer →
                 </button>
@@ -640,7 +640,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                 type="submit"
                 disabled={sending}
                 className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
-                style={{ background: 'var(--green)' }}
+                style={{ background: 'var(--green-cta)' }}
               >
                 {sending ? 'Envoi…' : 'Voir ma suite →'}
               </button>
@@ -669,7 +669,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
           )}
         </div>
 
-        <div className="h-1 shrink-0" style={{ background: 'var(--green)' }} />
+        <div className="h-1 shrink-0" style={{ background: 'var(--green-cta)' }} />
       </div>
     </div>
   )
@@ -755,7 +755,7 @@ function SortieConditionnelle({
         >
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-            style={{ background: 'var(--green)' }}
+            style={{ background: 'var(--green-cta)' }}
           >
             <IconCheck />
           </span>
@@ -786,7 +786,7 @@ function SortieConditionnelle({
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ background: 'var(--green)' }}
+                style={{ background: 'var(--green-cta)' }}
               />
               <span className="text-[14px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
                 {r}
@@ -818,7 +818,7 @@ function SortieConditionnelle({
           <a
             href={redirectUrl}
             className="btn-press mt-5 block w-full rounded-xl px-5 py-3.5 text-center text-[15px] font-extrabold text-white"
-            style={{ background: 'var(--green)' }}
+            style={{ background: 'var(--green-cta)' }}
           >
             Continuer →
           </a>
@@ -855,7 +855,7 @@ function SortieConditionnelle({
       >
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-          style={{ background: 'var(--green)' }}
+          style={{ background: 'var(--green-cta)' }}
         >
           <IconCheck />
         </span>

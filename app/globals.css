@@ -7,11 +7,16 @@
   /* ── ClearGo brand ───────────────────────────────────────────────────────── */
   --cleargo-navy:       #0D2B5E;   /* structure, autorité, titres */
   --cleargo-navy-light: #1A3A73;
-  --green:              #27AE60;   /* progression, validation, CTA */
+  /* Vert vif : réservé aux graphiques — anneaux, points, barres, filets.
+     Un graphique n'a besoin que de 3:1, du texte en demande 4.5:1. */
+  --green:              #27AE60;
   --green-light:        #2ECC71;
   --green-pale:         #E8F8F0;
-  /* Vert assombri pour le texte sur fond clair — contraste AA (4.7:1) */
-  --green-text:         #1E8449;
+  /* Toute surface verte portant du texte blanc. Blanc sur #27AE60 ne donne
+     que 2.87:1 — sous le seuil AA, et c'était le CTA principal du site. */
+  --green-cta:          #1E8449;
+  /* Texte vert sur fond clair, y compris sur --green-pale (5.6:1). */
+  --green-text:         #17703D;
   --reglo-orange:       #F97316;
 
   /* ── Surfaces ────────────────────────────────────────────────────────────── */
@@ -23,7 +28,7 @@
   --t1: #0D2B5E;   /* titres */
   --t2: #2D3D53;   /* corps appuyé */
   --t3: #4A5568;   /* corps */
-  --t4: #64748B;   /* secondaire — AA sur blanc */
+  --t4: #5B6B80;   /* secondaire — 5.4:1 sur blanc, 5.0:1 sur --surface */
   --t5: #94A3B8;   /* décoratif uniquement, jamais du texte porteur de sens */
 
   /* ── Lignes ──────────────────────────────────────────────────────────────── */
@@ -35,6 +40,12 @@
   --score-construction: #E67E22;
   --score-maitrise:     #27AE60;
   --score-excellence:   #8E44AD;
+  /* Variantes texte : les couleurs de palier ci-dessus sont calibrées pour des
+     aplats, pas pour de la typo. */
+  --score-insuffisant-text:  #C0392B;
+  --score-construction-text: #A85B00;
+  --score-maitrise-text:     #17703D;
+  --score-excellence-text:   #7D3C98;
 
   /* ── shadcn/ui tokens ────────────────────────────────────────────────────── */
   --background: var(--white);

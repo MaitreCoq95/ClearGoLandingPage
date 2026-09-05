@@ -62,7 +62,7 @@ function ScoreRing({ animated }: { animated: boolean }) {
       </text>
       <text
         x="50%" y="62%" textAnchor="middle" dominantBaseline="middle"
-        fill="#64748B" fontFamily="var(--font-jetbrains), monospace"
+        fill="#5B6B80" fontFamily="var(--font-jetbrains), monospace"
         fontSize="12" fontWeight="500" letterSpacing="1.5"
       >
         / 1000
@@ -181,7 +181,7 @@ export function Hero({ onCta }: HeroProps) {
                 data-cta
                 className="btn-press inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-[15px] font-bold text-white"
                 style={{
-                  background: 'var(--green)',
+                  background: 'var(--green-cta)',
                   boxShadow: '0 6px 22px -6px rgba(39,174,96,0.5)',
                 }}
               >
@@ -249,7 +249,7 @@ export function Hero({ onCta }: HeroProps) {
                     </p>
                     <p
                       className="mt-1.5 inline-block rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.1em] text-white"
-                      style={{ background: 'var(--green)' }}
+                      style={{ background: 'var(--green-cta)' }}
                     >
                       Maîtrisé
                     </p>
@@ -263,7 +263,7 @@ export function Hero({ onCta }: HeroProps) {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--green)' }} />
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--green-cta)' }} />
                         <span className="text-[11.5px]" style={{ color: 'var(--t4)' }}>Excellence</span>
                         <span className="num ml-auto text-[13px] font-bold" style={{ color: 'var(--green-text)' }}>
                           402

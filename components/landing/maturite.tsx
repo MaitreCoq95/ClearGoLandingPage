@@ -12,30 +12,36 @@ const PALIERS: {
   plage: string
   description: string
   couleur: string
+  /** Teinte assombrie : les couleurs de palier ne passent pas AA en typo. */
+  couleurTexte: string
 }[] = [
   {
     nom: 'Insuffisant',
     plage: '0–300',
     description: 'Exposition forte, écarts prioritaires à traiter',
     couleur: 'var(--score-insuffisant)',
+    couleurTexte: 'var(--score-insuffisant-text)',
   },
   {
     nom: 'En construction',
     plage: '301–600',
     description: 'Plusieurs briques présentes, des écarts subsistent',
     couleur: 'var(--score-construction)',
+    couleurTexte: 'var(--score-construction-text)',
   },
   {
     nom: 'Maîtrisé',
     plage: '601–900',
     description: 'Niveau solide sur le périmètre analysé',
     couleur: 'var(--score-maitrise)',
+    couleurTexte: 'var(--score-maitrise-text)',
   },
   {
     nom: 'Excellence',
     plage: '901–1000',
     description: 'Niveau différenciant, savoir-faire démontrables',
     couleur: 'var(--score-excellence)',
+    couleurTexte: 'var(--score-excellence-text)',
   },
 ]
 
@@ -97,7 +103,7 @@ export function Maturite() {
 
               <div
                 className="num mt-2 text-[22px] font-bold"
-                style={{ color: p.couleur, letterSpacing: '-1px' }}
+                style={{ color: p.couleurTexte, letterSpacing: '-1px' }}
               >
                 {p.plage}
                 <span className="text-[12px] font-medium" style={{ color: 'var(--t4)' }}>

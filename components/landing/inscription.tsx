@@ -65,7 +65,7 @@ export function Inscription({ onStart }: InscriptionProps) {
                 >
                   <span
                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white"
-                    style={{ background: 'var(--green)' }}
+                    style={{ background: 'var(--green-cta)' }}
                   >
                     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -133,7 +133,7 @@ export function Inscription({ onStart }: InscriptionProps) {
                 type="submit"
                 data-cta
                 className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
-                style={{ background: 'var(--green)', boxShadow: '0 6px 20px -6px rgba(39,174,96,0.45)' }}
+                style={{ background: 'var(--green-cta)', boxShadow: '0 6px 20px -6px rgba(39,174,96,0.45)' }}
               >
                 {digits.length === 14 ? 'Vérifier mon entreprise →' : 'Commencer l’évaluation →'}
               </button>

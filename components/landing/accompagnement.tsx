@@ -128,7 +128,7 @@ export function Accompagnement({ onCta }: AccompagnementProps) {
             data-cta
             className="btn-press inline-flex items-center justify-center gap-2 rounded-xl px-7 py-4 text-[15px] font-bold text-white"
             style={{
-              background: 'var(--green)',
+              background: 'var(--green-cta)',
               boxShadow: '0 6px 20px -6px rgba(39,174,96,0.45)',
             }}
           >
