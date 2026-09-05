@@ -9,17 +9,25 @@
  *
  * 2. L'IP est reprise de `x-forwarded-for`, posé par l'edge Vercel. On ne relaie
  *    jamais l'en-tête brut du client : il est falsifiable. On envoie une valeur
- *    déjà normalisée, dans un en-tête dédié que Django est libre de croire ou non.
+ *    déjà normalisée, dans un en-tête dédié.
  *
- * La clé partagée, si elle est définie, permet à Django de distinguer un appel
- * de la landing d'un scrapeur qui taperait l'endpoint public en direct.
+ * La clé partagée n'est PAS un confort. Django est joignable publiquement : il
+ * ne peut croire l'IP transmise que si l'appel prouve venir de la landing.
+ * Sans clé, il retombe sur l'IP du proxy et le throttle reste étranglé — ou
+ * pire, s'il faisait confiance sans vérifier, n'importe qui poserait une IP au
+ * hasard à chaque requête pour n'être jamais limité.
  */
+
+/** Valeur de repli quand aucune IP n'est déterminable. L'amont doit l'écarter. */
+export const IP_INCONNUE = 'unknown'
 
 export function clientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for')
   if (fwd) return fwd.split(',')[0]!.trim()
-  return req.headers.get('x-real-ip') ?? 'unknown'
+  return req.headers.get('x-real-ip') ?? IP_INCONNUE
 }
+
+let cleAbsenteSignalee = false
 
 export function bergerieHeaders(req: Request, extra?: HeadersInit): Headers {
   const headers = new Headers(extra)
@@ -27,7 +35,18 @@ export function bergerieHeaders(req: Request, extra?: HeadersInit): Headers {
   headers.set('X-ClearGo-Client-IP', clientIp(req))
 
   const key = process.env.BERGERIE_API_KEY
-  if (key) headers.set('X-ClearGo-Key', key)
+  if (key) {
+    headers.set('X-ClearGo-Key', key)
+  } else if (!cleAbsenteSignalee) {
+    // Une seule fois par instance : cette configuration marche en apparence,
+    // ce qui la rend d'autant plus facile à laisser traîner en production.
+    cleAbsenteSignalee = true
+    console.warn(
+      'BERGERIE_API_KEY absente : La Bergerie ne pourra pas authentifier les ' +
+        "appels de la landing et ignorera l'IP transmise. Le throttle retombera " +
+        "sur l'IP de sortie Vercel, donc partagé entre tous les visiteurs.",
+    )
+  }
 
   return headers
 }
