@@ -16,9 +16,8 @@ type Univers = {
   icone: ClearGoIconName
   description: string
   referentiels: string[]
-  /** Absente tant que la photo du secteur n'est pas produite. */
-  photo?: string
-  alt?: string
+  photo: string
+  alt: string
 }
 
 const UNIVERS: Univers[] = [
@@ -34,6 +33,8 @@ const UNIVERS: Univers[] = [
   },
   {
     id: 'pharma',
+    photo: '/images/univers-pharma.webp',
+    alt: 'Chargement pharmaceutique à l’arrière d’un camion frigorifique, opérateur ganté et caisse scellée',
     titre: 'Température dirigée — Pharma',
     icone: 'gdp',
     description:
@@ -73,91 +74,21 @@ const UNIVERS: Univers[] = [
   },
 ]
 
-/**
- * Relevé de chaîne du froid.
- *
- * Tient la place du visuel pour le pharma, qui n'a pas de photo. Plutôt qu'une
- * icône seule dans un carré vide — qui se lirait comme une image manquante à
- * côté des quatre onglets illustrés — on reprend le langage des panneaux
- * maquettés déjà utilisés ailleurs sur la page. C'est aussi ce qui distingue le
- * mieux le pharma de l'agroalimentaire : l'instrumentation.
- */
-function ReleveTemperature() {
-  // Tracé fictif, borné entre 2 et 8 °C.
-  const points = [5.1, 4.8, 5.4, 5.0, 4.6, 5.2, 5.6, 5.3, 4.9, 5.1, 4.7, 5.0]
-  const toY = (t: number) => 62 - ((t - 2) / 6) * 52
-  const path = points
-    .map((t, i) => `${i === 0 ? 'M' : 'L'} ${8 + (i * 184) / (points.length - 1)} ${toY(t).toFixed(1)}`)
-    .join(' ')
-
-  return (
-    <div
-      className="flex flex-col overflow-hidden rounded-xl"
-      style={{ aspectRatio: '1 / 1', border: '1px solid var(--line)', background: 'var(--white)' }}
-    >
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ background: 'var(--cleargo-navy)' }}
-      >
-        <span className="text-[12px] font-bold text-white">Chaîne du froid</span>
-        <span className="num text-[11px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          04 h 20
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col justify-center px-4 py-5">
-        <svg viewBox="0 0 200 70" className="w-full" role="img" aria-label="Relevé de température stable entre 2 et 8 degrés">
-          {/* Plage autorisée */}
-          <rect x="8" y={toY(8)} width="184" height={toY(2) - toY(8)} fill="var(--green-pale)" />
-          <line x1="8" y1={toY(8)} x2="192" y2={toY(8)} stroke="var(--green)" strokeWidth="0.8" strokeDasharray="3 2" opacity=".5" />
-          <line x1="8" y1={toY(2)} x2="192" y2={toY(2)} stroke="var(--green)" strokeWidth="0.8" strokeDasharray="3 2" opacity=".5" />
-          <path d={path} fill="none" stroke="var(--cleargo-navy)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-
-        <div className="mt-4 flex items-baseline justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--t4)' }}>
-            Plage cible
-          </span>
-          <span className="num text-[15px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
-            2 – 8 °C
-          </span>
-        </div>
-      </div>
-
-      <div
-        className="flex items-center gap-2 px-4 py-3"
-        style={{ background: 'var(--green-pale)', borderTop: '1px solid var(--line)' }}
-      >
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M3 8.5L6.5 12L13 4.5" stroke="var(--green-text)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="text-[12.5px] font-bold" style={{ color: 'var(--green-text)' }}>
-          Aucune excursion sur le trajet
-        </span>
-      </div>
-    </div>
-  )
-}
-
 function UniversContenu({ univers }: { univers: Univers }) {
   return (
     <div className="grid gap-7 md:grid-cols-[minmax(0,300px)_1fr] md:items-start">
-      {univers.photo ? (
-        <div
-          className="relative overflow-hidden rounded-xl"
-          style={{ aspectRatio: '1 / 1', border: '1px solid var(--line)' }}
-        >
-          <Image
-            src={univers.photo}
-            alt={univers.alt ?? ''}
-            fill
-            sizes="(max-width: 768px) 92vw, 300px"
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <ReleveTemperature />
-      )}
+      <div
+        className="relative overflow-hidden rounded-xl"
+        style={{ aspectRatio: '1 / 1', border: '1px solid var(--line)' }}
+      >
+        <Image
+          src={univers.photo}
+          alt={univers.alt}
+          fill
+          sizes="(max-width: 768px) 92vw, 300px"
+          className="object-cover"
+        />
+      </div>
 
       <div>
       <div className="flex items-start gap-4">
