@@ -202,8 +202,9 @@ export function Hero({ onCta }: HeroProps) {
             </p>
           </div>
 
-          {/* Colonne droite : photo sur mobile, carte de score flottante sur desktop */}
-          <div className="lg:flex lg:justify-end">
+          {/* Colonne droite : photo sur mobile, carte de score flottante sur desktop.
+              Alignée en bas pour dégager le visage sur la photo. */}
+          <div className="lg:flex lg:justify-end lg:self-end lg:pb-4">
 
             {/* Sur mobile la photo passe en pleine largeur — en desktop elle est en fond */}
             <div className="-mx-6 lg:hidden">
