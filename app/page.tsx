@@ -1,27 +1,41 @@
-"use client"
+'use client'
 
-import { Suspense, useState } from "react"
-import { Navbar } from "@/components/landing/navbar"
-import { Hero } from "@/components/landing/hero"
-import { Problems } from "@/components/landing/problems"
-import { Solution } from "@/components/landing/solution"
-import { Parcours } from "@/components/landing/parcours"
-import { Market } from "@/components/landing/market"
-import { Certificate } from "@/components/landing/certificate"
-import { Team } from "@/components/landing/team"
-import { CtaFinal } from "@/components/landing/cta-final"
-import { Footer } from "@/components/landing/footer"
-import { StickyMobileCta } from "@/components/landing/sticky-mobile-cta"
-import { KioskBanner, useKioskMode } from "@/components/landing/kiosk-banner"
-import { PrequalFunnel } from "@/components/landing/prequal-funnel"
-import { NameSemantics } from "@/components/landing/name-semantics"
-import { TransformationCarousel } from "@/components/landing/transformation-carousel"
+import { Suspense, useState } from 'react'
+import { Navbar } from '@/components/landing/navbar'
+import { Hero } from '@/components/landing/hero'
+import { KeyFigure } from '@/components/landing/key-figure'
+import { Problems } from '@/components/landing/problems'
+import { Benefits } from '@/components/landing/benefits'
+import { Parcours } from '@/components/landing/parcours'
+import { Echantillonnage } from '@/components/landing/echantillonnage'
+import { SuiviContinu } from '@/components/landing/suivi-continu'
+import { CoutControle } from '@/components/landing/cout-controle'
+import { Maturite } from '@/components/landing/maturite'
+import { NiveauxExigence } from '@/components/landing/niveaux-exigence'
+import { UniversSectoriels } from '@/components/landing/univers-sectoriels'
+import { Referentiels } from '@/components/landing/referentiels'
+import { ProfilConformite } from '@/components/landing/profil-conformite'
+import { Accompagnement } from '@/components/landing/accompagnement'
+import { Inscription } from '@/components/landing/inscription'
+import { Team } from '@/components/landing/team'
+import { Footer } from '@/components/landing/footer'
+import { StickyMobileCta } from '@/components/landing/sticky-mobile-cta'
+import { KioskBanner, useKioskMode } from '@/components/landing/kiosk-banner'
+import { PrequalFunnel } from '@/components/landing/prequal-funnel'
 
 function LandingContent() {
   const isKiosk = useKioskMode()
   const [funnelOpen, setFunnelOpen] = useState(false)
+  const [initialSiret, setInitialSiret] = useState('')
 
-  const openFunnel = () => setFunnelOpen(true)
+  const openFunnel = () => {
+    setInitialSiret('')
+    setFunnelOpen(true)
+  }
+  const openFunnelWithSiret = (siret: string) => {
+    setInitialSiret(siret)
+    setFunnelOpen(true)
+  }
   const closeFunnel = () => setFunnelOpen(false)
 
   return (
@@ -29,21 +43,27 @@ function LandingContent() {
       {!isKiosk && <Navbar onCta={openFunnel} />}
 
       <Hero onCta={openFunnel} />
-      <NameSemantics />
+      <KeyFigure />
       <Problems />
-      <Solution />
-      <Certificate />
-      <TransformationCarousel onCta={openFunnel} />
-      <Parcours onCta={openFunnel} />
-      <Market />
+      <Benefits />
+      <Parcours />
+      <Echantillonnage />
+      <SuiviContinu />
+      <CoutControle />
+      <Maturite />
+      <NiveauxExigence />
+      <UniversSectoriels />
+      <Referentiels />
+      <ProfilConformite />
+      <Accompagnement onCta={openFunnel} />
+      <Inscription onStart={openFunnelWithSiret} />
       <Team />
-      <CtaFinal onCta={openFunnel} />
 
       {!isKiosk && <Footer />}
       {!isKiosk && <StickyMobileCta onCta={openFunnel} />}
       {isKiosk && <KioskBanner />}
 
-      <PrequalFunnel open={funnelOpen} onClose={closeFunnel} />
+      <PrequalFunnel open={funnelOpen} onClose={closeFunnel} initialSiret={initialSiret} />
     </main>
   )
 }
