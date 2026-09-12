@@ -5,15 +5,43 @@ import { bergerieHeaders } from '@/lib/bergerie'
 /**
  * Qualification d'un prospect depuis la landing.
  *
- * Chemin nominal : POST vers La Bergerie, qui rapproche le SIRET du registre
- * GRECO, enrichit le prospect existant et notifie l'équipe commerciale.
+ * Chemin nominal : POST vers le CRM, qui rapproche le SIRET du registre GRECO,
+ * enrichit le prospect existant et notifie l'équipe commerciale.
  *
- * Filet de sécurité : si La Bergerie n'est pas configurée ou ne répond pas,
- * le lead part par email plutôt que d'être perdu.
+ * Repli : si le CRM est injoignable, le lead part par email — mais JAMAIS en
+ * silence. Un repli muet fait croire que le CRM reçoit les leads alors qu'il
+ * n'en voit aucun, et c'est le pire scénario : on ne découvre le trou qu'en
+ * comparant les compteurs, des semaines plus tard.
+ *
+ * Le silence est supprimé à trois endroits : log serveur explicite, champ de
+ * diagnostic dans la réponse, et bandeau d'alerte en tête de l'email de repli.
  */
 
 const BERGERIE_API_URL = process.env.BERGERIE_API_URL
 const RECIPIENT = 'contact@cleargo.fr'
+
+/**
+ * Chemin exposé par le backend.
+ *
+ * TODO(session-saas): à confirmer sur la branche du CRM. La documentation
+ * annonce /api/crm/landing/qualify/ tandis que l'implémentation initiale
+ * exposait /api/bergerie/landing/qualify/. Tant que l'écart n'est pas levé,
+ * la valeur est pilotée par variable d'environnement pour être corrigée sans
+ * redéploiement de code.
+ */
+const QUALIFY_PATH =
+  process.env.BERGERIE_QUALIFY_PATH || '/api/crm/landing/qualify/'
+
+type Degradation =
+  | 'crm_non_configure'
+  | 'crm_statut_inattendu'
+  | 'crm_injoignable'
+
+const RAISON_LISIBLE: Record<Degradation, string> = {
+  crm_non_configure: "BERGERIE_API_URL n'est pas renseignée",
+  crm_statut_inattendu: 'le CRM a répondu un statut inattendu',
+  crm_injoignable: 'le CRM est injoignable (timeout ou erreur réseau)',
+}
 
 function escapeHtml(str: string): string {
   return str
@@ -24,8 +52,26 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#x27;')
 }
 
-async function notifyByEmail(payload: Record<string, unknown>, reason: string) {
-  if (!process.env.RESEND_API_KEY) return
+/** Log serveur volontairement bruyant : c'est le premier signal d'alerte. */
+function alerterDegradation(motif: Degradation, detail: string) {
+  console.error(
+    `[ClearGo][ALERTE] Lead NON transmis au CRM — ${RAISON_LISIBLE[motif]}. ` +
+      `${detail} Le lead est parti par email ; il n'est PAS dans le CRM.`,
+  )
+}
+
+async function notifyByEmail(
+  payload: Record<string, unknown>,
+  motif: Degradation,
+  detail: string,
+) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error(
+      "[ClearGo][ALERTE] RESEND_API_KEY absente : le repli email est lui aussi " +
+        'hors service. Ce lead est PERDU.',
+    )
+    throw new Error('Aucun canal de collecte disponible')
+  }
 
   const rows = Object.entries(payload)
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
@@ -42,13 +88,21 @@ async function notifyByEmail(payload: Record<string, unknown>, reason: string) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   await resend.emails.send({
     from: 'ClearGo <onboarding@resend.dev>',
+    // Le sujet dit l'anomalie : un email qui ressemble à la normale se noie.
+    subject: `[ACTION REQUISE] Lead hors CRM — ${escapeHtml(String(payload.email || 'prospect'))}`,
     to: RECIPIENT,
-    subject: `[ClearGo] Qualification landing — ${escapeHtml(String(payload.raison_sociale || payload.email || 'nouveau prospect'))}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:#0D2B5E;padding:24px 32px;border-radius:12px 12px 0 0">
-          <h1 style="color:#fff;font-size:20px;margin:0">Qualification depuis la landing</h1>
-          <p style="color:#2ECC71;font-size:13px;margin:6px 0 0">Envoi par email — ${escapeHtml(reason)}</p>
+        <div style="background:#C0392B;padding:18px 24px;border-radius:12px 12px 0 0">
+          <p style="color:#fff;font-size:15px;font-weight:700;margin:0">
+            Ce lead n'est PAS enregistré dans le CRM.
+          </p>
+          <p style="color:rgba(255,255,255,.9);font-size:13px;margin:8px 0 0">
+            Raison : ${escapeHtml(RAISON_LISIBLE[motif])}. ${escapeHtml(detail)}
+          </p>
+          <p style="color:rgba(255,255,255,.9);font-size:13px;margin:8px 0 0">
+            À saisir manuellement, et à corriger côté configuration.
+          </p>
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:24px 0">
           <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>
@@ -96,16 +150,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ status: 'error', error: 'Requête invalide' }, { status: 400 })
   }
 
-  const siret = String(body.siret ?? '').replace(/\D/g, '')
   const zones = Array.isArray(body.q_zones_livraison) ? (body.q_zones_livraison as string[]) : []
 
+  // La session publique est anonyme (décision B3/B12 du 07/09) : ni SIREN, ni
+  // ville, ni nom d'entreprise ne transitent avant l'account gate.
   const payload = {
-    siret: siret || null,
-    siret_non_verifie: Boolean(body.siret_non_verifie),
-    raison_sociale: body.raison_sociale ?? '',
     email: body.email ?? '',
-    telephone: body.telephone ?? '',
     prenom: body.prenom ?? '',
+    telephone: body.telephone ?? '',
     q_type_marchandise: body.q_type_marchandise ?? '',
     q_zones_livraison: zones,
     q_has_international: zones.includes('International'),
@@ -116,22 +168,25 @@ export async function POST(req: Request) {
     source: 'landing',
   }
 
+  let motif: Degradation = 'crm_non_configure'
+  let detail = ''
+
   if (BERGERIE_API_URL) {
+    const url = `${BERGERIE_API_URL.replace(/\/$/, '')}${QUALIFY_PATH}`
     try {
-      const upstream = await fetch(
-        `${BERGERIE_API_URL.replace(/\/$/, '')}/api/bergerie/landing/qualify/`,
-        {
-          method: 'POST',
-          headers: bergerieHeaders(req, { 'Content-Type': 'application/json' }),
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(8000),
-        },
-      )
+      const upstream = await fetch(url, {
+        method: 'POST',
+        headers: bergerieHeaders(req, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(8000),
+      })
 
       if (upstream.ok) {
         const data = (await upstream.json().catch(() => ({}))) as Record<string, unknown>
         return NextResponse.json({
           status: 'ok',
+          transport: 'crm',
+          degraded: false,
           urgence_licence:
             typeof data.urgence_licence === 'number' ? data.urgence_licence : null,
           compte_cree: data.compte_cree === true,
@@ -139,21 +194,42 @@ export async function POST(req: Request) {
           perimetre: safePerimetre(data.perimetre),
         })
       }
-    } catch {
-      // On bascule sur l'email plutôt que de perdre le lead.
+
+      // Un 404 ici signifie très probablement que QUALIFY_PATH ne correspond
+      // pas au chemin réellement exposé par le backend.
+      motif = 'crm_statut_inattendu'
+      detail =
+        `HTTP ${upstream.status} sur ${url}.` +
+        (upstream.status === 404
+          ? ' Un 404 indique un chemin d’API erroné : vérifier BERGERIE_QUALIFY_PATH.'
+          : '')
+    } catch (err) {
+      motif = 'crm_injoignable'
+      detail = `Appel de ${url} : ${err instanceof Error ? err.message : 'erreur inconnue'}.`
     }
+  } else {
+    detail = 'Aucun appel tenté.'
   }
+
+  alerterDegradation(motif, detail)
 
   try {
-    await notifyByEmail(payload, BERGERIE_API_URL ? 'La Bergerie injoignable' : 'La Bergerie non configurée')
+    await notifyByEmail(payload, motif, detail)
   } catch (err) {
-    console.error('Notification du lead impossible :', err)
-    return NextResponse.json({ status: 'error', error: 'Erreur interne' }, { status: 500 })
+    console.error('[ClearGo][ALERTE] Repli email en échec :', err)
+    return NextResponse.json(
+      { status: 'error', error: 'Erreur interne', transport: 'aucun', degraded: true, motif },
+      { status: 500 },
+    )
   }
 
-  // Sans La Bergerie, pas de compte ni de périmètre : l'écran de sortie le gère.
+  // Le visiteur voit un succès — sa demande est bien collectée. La dégradation
+  // est signalée dans la réponse pour l'admin et la télémétrie, pas affichée.
   return NextResponse.json({
     status: 'ok',
+    transport: 'email',
+    degraded: true,
+    motif,
     urgence_licence: null,
     compte_cree: false,
     redirect_url: null,
