@@ -1,9 +1,14 @@
 import { Resend } from "resend"
 import { NextResponse } from "next/server"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const RECIPIENT = "contact@cleargo.fr"
+
+// Instanciation paresseuse : au chargement du module, `new Resend(undefined)`
+// jette et fait échouer le build partout où la clé n'est pas définie.
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY
+  return key ? new Resend(key) : null
+}
 
 function escapeHtml(str: string): string {
   return str
@@ -73,6 +78,12 @@ export async function POST(req: Request) {
     const emailField = typeof fields.email === "string" ? fields.email : ""
     const prenomField = typeof fields.prenom === "string" ? fields.prenom : ""
     const subject = `[ClearGo Lead] ${sourceLabel} — ${escapeHtml(emailField || prenomField || "Nouveau prospect")}`
+
+    const resend = getResend()
+    if (!resend) {
+      console.error("RESEND_API_KEY absente : le lead n'a pas pu être envoyé.")
+      return NextResponse.json({ ok: false, error: "Service indisponible" }, { status: 503 })
+    }
 
     const { error } = await resend.emails.send({
       from: "ClearGo <onboarding@resend.dev>",

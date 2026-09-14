@@ -32,7 +32,7 @@ export function KioskBanner() {
         <div className="mt-1 font-sans text-xl font-black text-white">SCANNEZ POUR IDENTIFIER VOTRE ENTREPRISE</div>
       </div>
       <a
-        href="#contact"
+        href="#inscription"
         className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-2xl border-2 border-white/20 bg-white"
       >
         {/* Placeholder QR code */}

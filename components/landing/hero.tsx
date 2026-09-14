@@ -1,70 +1,71 @@
-"use client"
+'use client'
 
-import { useEffect, useRef, useState } from "react"
-import Image from "next/image"
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import { ClearGoIcon } from '@/components/icons/cleargo-icon'
+import { useReveal } from '@/hooks/use-reveal'
 
-function ScoreRing({ animated = false }: { animated?: boolean }) {
-  const r          = 88
-  const cx         = 100
-  const cy         = 100
-  const circumference  = 2 * Math.PI * r
-  const rInner     = 64
-  const circInner  = 2 * Math.PI * rInner
+/**
+ * Anneau ClearGo Score.
+ * Anneau extérieur = RÉGLO, anneau intérieur = EXCELLENCE.
+ * Le palier suit la grille officielle (Insuffisant / En construction /
+ * Maîtrisé / Excellence) — jamais de métaux, jamais de mention « certifié ».
+ */
+function ScoreRing({ animated }: { animated: boolean }) {
+  const rOuter = 88
+  const rInner = 64
+  const circOuter = 2 * Math.PI * rOuter
+  const circInner = 2 * Math.PI * rInner
+
   const [started, setStarted] = useState(false)
 
   useEffect(() => {
-    if (animated) {
-      const t = setTimeout(() => setStarted(true), 300)
-      return () => clearTimeout(t)
-    }
+    if (!animated) return
+    const t = setTimeout(() => setStarted(true), 200)
+    return () => clearTimeout(t)
   }, [animated])
 
-  const regloOffset     = circumference * (1 - (animated && started ? 0.84 : 0))
-  const excellenceOffset = circInner   * (1 - (animated && started ? 0.80 : 0))
+  const outerOffset = circOuter * (1 - (started ? 418 / 500 : 0))
+  const innerOffset = circInner * (1 - (started ? 402 / 500 : 0))
 
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full">
-      {/* Outer track */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#D5DFE5" strokeWidth="10" />
-      {/* RÉGLO ring */}
+    <svg
+      viewBox="0 0 200 200"
+      className="h-full w-full"
+      role="img"
+      aria-label="ClearGo Score : 820 sur 1000, niveau maîtrisé"
+    >
+      <circle cx="100" cy="100" r={rOuter} fill="none" stroke="#E2E8F0" strokeWidth="12" />
+      <circle cx="100" cy="100" r={rInner} fill="none" stroke="#E2E8F0" strokeWidth="10" />
+
       <circle
-        cx={cx} cy={cy} r={r}
-        fill="none" stroke="#1C2B35" strokeWidth="10" strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={regloOffset}
+        cx="100" cy="100" r={rOuter}
+        fill="none" stroke="#0D2B5E" strokeWidth="12" strokeLinecap="round"
+        strokeDasharray={circOuter} strokeDashoffset={outerOffset}
         transform="rotate(-90 100 100)"
-        style={{ transition: "stroke-dashoffset 2s cubic-bezier(0.4,0,0.2,1)" }}
+        style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)' }}
       />
-      {/* Inner track */}
-      <circle cx={cx} cy={cy} r={rInner} fill="none" stroke="#D5DFE5" strokeWidth="8" />
-      {/* EXCELLENCE ring */}
       <circle
-        cx={cx} cy={cy} r={rInner}
-        fill="none" stroke="#4A7B8C" strokeWidth="8" strokeLinecap="round"
-        strokeDasharray={circInner}
-        strokeDashoffset={excellenceOffset}
+        cx="100" cy="100" r={rInner}
+        fill="none" stroke="#27AE60" strokeWidth="10" strokeLinecap="round"
+        strokeDasharray={circInner} strokeDashoffset={innerOffset}
         transform="rotate(-90 100 100)"
-        style={{ transition: "stroke-dashoffset 2s cubic-bezier(0.4,0,0.2,1) 0.4s" }}
+        style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1) 0.15s' }}
       />
-      {/* Score text */}
-      <text x="50%" y="44%" textAnchor="middle" dominantBaseline="middle"
-        fill="#1C2B35" fontFamily="'Plus Jakarta Sans', system-ui" fontSize="40" fontWeight="800"
-        letterSpacing="-2"
+
+      <text
+        x="50%" y="48%" textAnchor="middle" dominantBaseline="middle"
+        fill="#0D2B5E" fontFamily="var(--font-jetbrains), monospace"
+        fontSize="46" fontWeight="700" letterSpacing="-2"
       >
         820
       </text>
-      <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle"
-        fill="#8FA4B2" fontFamily="'Plus Jakarta Sans', system-ui" fontSize="11" fontWeight="600"
-        letterSpacing="2"
+      <text
+        x="50%" y="62%" textAnchor="middle" dominantBaseline="middle"
+        fill="#5B6B80" fontFamily="var(--font-jetbrains), monospace"
+        fontSize="12" fontWeight="500" letterSpacing="1.5"
       >
-        / 1000 PTS
-      </text>
-      {/* Niveau OR badge */}
-      <rect x="58" y="68%" width="84" height="17" rx="8" fill="#4A7B8C" />
-      <text x="50%" y="77%" textAnchor="middle" dominantBaseline="middle"
-        fill="white" fontFamily="'Plus Jakarta Sans', system-ui" fontSize="7.5" fontWeight="800" letterSpacing="1.5"
-      >
-        NIVEAU OR
+        / 1000
       </text>
     </svg>
   )
@@ -75,253 +76,219 @@ interface HeroProps {
 }
 
 export function Hero({ onCta }: HeroProps) {
-  const [loaded, setLoaded]       = useState(false)
-  const ringRef                   = useRef<HTMLDivElement>(null)
-  const [ringVisible, setRingVisible] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const { ref: cardRef, visible: cardVisible } = useReveal<HTMLDivElement>(0.25)
 
   useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 80)
+    const t = setTimeout(() => setLoaded(true), 60)
     return () => clearTimeout(t)
   }, [])
 
-  useEffect(() => {
-    const el = ringRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setRingVisible(true); obs.disconnect() } },
-      { threshold: 0.3 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+  const enter = (delay: number) => ({
+    opacity: loaded ? 1 : 0,
+    transform: loaded ? 'translateY(0)' : 'translateY(18px)',
+    transition: `opacity .7s var(--ease-apple) ${delay}s, transform .7s var(--ease-apple) ${delay}s`,
+  })
 
   return (
     <section
       id="hero"
-      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
-      style={{ background: "#FAFBFC" }}
+      className="relative flex min-h-screen items-center overflow-hidden"
+      style={{ background: 'var(--surface)' }}
     >
-      {/* Fine grid texture */}
+      {/* Texture de grille, estompée avant d'atteindre la photo */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(74,123,140,1) 1px, transparent 1px), linear-gradient(90deg, rgba(74,123,140,1) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+            'linear-gradient(#0D2B5E 1px, transparent 1px), linear-gradient(90deg, #0D2B5E 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+          maskImage: 'linear-gradient(90deg, #000 0%, #000 42%, transparent 68%)',
+          WebkitMaskImage: 'linear-gradient(90deg, #000 0%, #000 42%, transparent 68%)',
         }}
       />
-      {/* Subtle radial glow */}
+
+      {/* ── Photo plein bord, jusqu'au bord droit de l'écran ─────────────── */}
       <div
-        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[54%] lg:block"
         style={{
-          background: "radial-gradient(ellipse 65% 55% at 65% 45%, rgba(74,123,140,0.07) 0%, transparent 70%)",
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 1.1s var(--ease-apple) .15s',
         }}
-      />
+      >
+        <Image
+          src="/images/hero-transporteur.webp"
+          alt=""
+          fill
+          priority
+          sizes="54vw"
+          className="object-cover"
+          style={{ objectPosition: 'center 30%' }}
+        />
+        {/* Fondu vers le fond de section : aucune couture visible */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, var(--surface) 0%, rgba(244,246,250,0.92) 12%, rgba(244,246,250,0.45) 32%, rgba(244,246,250,0) 60%)',
+          }}
+        />
+      </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-6 pt-36 pb-24 lg:px-12 lg:pt-44 lg:pb-32">
-        <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-20">
+      {/* ── Contenu ──────────────────────────────────────────────────────── */}
+      <div className="relative mx-auto w-full max-w-7xl px-6 lg:px-12">
+        <div className="grid items-center gap-10 pt-28 pb-16 lg:grid-cols-2 lg:gap-8 lg:pt-32 lg:pb-24">
 
-          {/* ── LEFT ─────────────────────────────────────────────────── */}
-          <div>
-            {/* CaaS chip */}
-            <div
-              className="mb-5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5"
-              style={{
-                borderColor: "rgba(74,123,140,0.35)",
-                background:  "rgba(74,123,140,0.07)",
-                opacity:     loaded ? 1 : 0,
-                transform:   loaded ? "translateY(0)" : "translateY(14px)",
-                transition:  "all 0.7s cubic-bezier(0.25,0.1,0.25,1) 0.05s",
-              }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#4A7B8C" }} />
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#4A7B8C" }}>
-                CaaS — Compliance as a Service · Transporteurs TRM
-              </span>
+          {/* Colonne texte */}
+          <div className="lg:pr-6">
+            <div className="section-eyebrow mb-5" style={enter(0.04)}>
+              Transporteurs routiers
             </div>
 
-            {/* H1 */}
             <h1
-              className="font-black leading-[1.04] tracking-tight"
+              className="font-black tracking-tight"
               style={{
-                fontSize:   "clamp(40px, 5.5vw, 72px)",
-                letterSpacing: "-2.5px",
-                color:      "#1C2B35",
-                opacity:    loaded ? 1 : 0,
-                transform:  loaded ? "translateY(0)" : "translateY(22px)",
-                transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.08s",
+                fontSize: 'clamp(40px, 5.6vw, 74px)',
+                lineHeight: 1.02,
+                letterSpacing: '-2.5px',
+                color: 'var(--cleargo-navy)',
+                ...enter(0.08),
               }}
             >
-              Être choisi autrement
+              Être bon
               <br />
-              que par le <em style={{ fontStyle: "normal", color: "#4A7B8C" }}>prix.</em>
+              ne suffit pas.
+              <br />
+              <span style={{ color: 'var(--green-text)' }}>Encore faut-il</span>
+              <br />
+              <span style={{ color: 'var(--green-text)' }}>pouvoir le prouver.</span>
             </h1>
 
-            {/* Subtitle */}
             <p
-              className="mt-6 max-w-[480px] text-[17px] leading-relaxed"
-              style={{
-                color:      "#5E7485",
-                opacity:    loaded ? 1 : 0,
-                transform:  loaded ? "translateY(0)" : "translateY(22px)",
-                transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.16s",
-              }}
+              className="mt-7 max-w-[470px] text-[17px] leading-relaxed"
+              style={{ color: 'var(--t3)', ...enter(0.16) }}
             >
-              ClearGo transforme vos obligations réglementaires en un{" "}
-              <strong style={{ color: "#3A4E5A", fontWeight: 600 }}>Trust Score partageable</strong>{" "}
-              — crédible face à n'importe quel donneur d'ordre, en continu.
+              ClearGo vous aide à objectiver votre conformité, vos pratiques et vos
+              savoir-faire — pour comprendre où vous en êtes, progresser, et mieux vous
+              présenter aux donneurs d’ordres adaptés.
             </p>
 
-            {/* CTAs */}
-            <div
-              className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center"
-              style={{
-                opacity:    loaded ? 1 : 0,
-                transform:  loaded ? "translateY(0)" : "translateY(22px)",
-                transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.24s",
-              }}
-            >
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={enter(0.24)}>
               <button
                 onClick={onCta}
                 data-cta
-                className="btn-press inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-[15px] font-bold text-white"
+                className="btn-press inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-[15px] font-bold text-white"
                 style={{
-                  background:  "#4A7B8C",
-                  boxShadow:   "0 6px 28px -4px rgba(74,123,140,0.35)",
+                  background: 'var(--green-cta)',
+                  boxShadow: '0 6px 22px -6px rgba(39,174,96,0.5)',
                 }}
               >
-                Identifier mon entreprise →
+                Évaluer mon profil ClearGo
+                <span aria-hidden="true">→</span>
               </button>
               <a
-                href="#donneurs-ordre"
-                className="btn-press inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-4 text-[14px] font-semibold transition-colors"
-                style={{
-                  borderColor: "#D5DFE5",
-                  color:       "#A87055",
-                }}
+                href="/comment-ca-marche"
+                className="btn-press inline-flex items-center justify-center rounded-full border-2 bg-white px-7 py-4 text-[15px] font-semibold"
+                style={{ borderColor: 'var(--cleargo-navy)', color: 'var(--cleargo-navy)' }}
               >
-                Je suis donneur d'ordre
+                Voir comment ça marche
               </a>
             </div>
 
-            <p
-              className="mt-4 text-[12px]"
-              style={{
-                color:      "#8FA4B2",
-                opacity:    loaded ? 1 : 0,
-                transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.32s",
-              }}
-            >
-              Identification par SIRET · Pré-qualification immédiate · Sans engagement
+            <p className="mt-5 text-[13px]" style={{ color: 'var(--t4)', ...enter(0.3) }}>
+              Gratuit · Sans engagement · Réservé aux transporteurs routiers
             </p>
-
-            {/* Trust row */}
-            <div
-              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3"
-              style={{
-                opacity:    loaded ? 1 : 0,
-                transition: "all 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.4s",
-              }}
-            >
-              {[
-                { label: "23 transporteurs bêta",  icon: "🚛" },
-                { label: "DRIEAT compliant",        icon: "✅" },
-                { label: "Données hébergées en France", icon: "🔒" },
-              ].map((t) => (
-                <div key={t.label} className="flex items-center gap-2 text-[12px]" style={{ color: "#8FA4B2" }}>
-                  <span>{t.icon}</span>
-                  <span className="font-medium">{t.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* ── RIGHT — Score card ───────────────────────────────────── */}
-          <div
-            ref={ringRef}
-            className="flex justify-center"
-            style={{
-              opacity:    loaded ? 1 : 0,
-              transform:  loaded ? "translateX(0)" : "translateX(36px)",
-              transition: "all 1s cubic-bezier(0.25,0.1,0.25,1) 0.2s",
-            }}
-          >
-            <div className="relative w-full max-w-[340px]">
-              {/* Live indicator */}
-              <div
-                className="absolute -top-4 right-0 z-10 flex items-center gap-2 rounded-full border px-4 py-2"
-                style={{
-                  borderColor: "#D5DFE5",
-                  background:  "#FFFFFF",
-                  boxShadow:   "0 2px 12px rgba(74,123,140,0.08)",
-                }}
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ background: "#4A7B8C", animation: "pulse-dot 2s infinite" }}
+          {/* Colonne droite : photo sur mobile, carte de score flottante sur desktop.
+              Alignée en bas pour dégager le visage sur la photo. */}
+          <div className="lg:flex lg:justify-end lg:self-end lg:pb-4">
+
+            {/* Sur mobile la photo passe en pleine largeur — en desktop elle est en fond */}
+            <div className="-mx-6 lg:hidden">
+              <div className="relative h-[280px] w-full sm:h-[360px]">
+                <Image
+                  src="/images/hero-transporteur.webp"
+                  alt="Dirigeante d’une entreprise de transport routier devant sa flotte"
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover"
+                  style={{ objectPosition: 'center 28%' }}
                 />
-                <span className="text-[11px] font-semibold" style={{ color: "#5E7485" }}>
-                  Mise à jour en direct
-                </span>
               </div>
+            </div>
 
-              {/* Ring card */}
+            {/* Carte de score — posée sur la photo en desktop */}
+            <div
+              ref={cardRef}
+              className="mx-auto mt-8 w-full max-w-[330px] lg:mx-0 lg:mt-0"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? 'translateY(0)' : 'translateY(24px)',
+                transition: 'opacity .9s var(--ease-apple) .35s, transform .9s var(--ease-apple) .35s',
+              }}
+            >
               <div
-                className="rounded-2xl border p-6"
-                style={{
-                  background:   "#FFFFFF",
-                  borderColor:  "#D5DFE5",
-                  boxShadow:    "0 16px 60px -12px rgba(74,123,140,0.12)",
-                }}
+                className="rounded-2xl bg-white p-6"
+                style={{ boxShadow: '0 24px 60px -20px rgba(13,43,94,0.28), 0 0 0 1px rgba(13,43,94,0.05)' }}
               >
-                <div className="mx-auto" style={{ width: "260px", height: "260px" }}>
-                  <ScoreRing animated={ringVisible} />
-                </div>
+                <div className="flex items-center gap-5">
+                  <div className="shrink-0" style={{ width: 112, height: 112 }}>
+                    <ScoreRing animated={cardVisible} />
+                  </div>
 
-                {/* Legend */}
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2.5 rounded-lg border p-3" style={{ borderColor: "#D5DFE5" }}>
-                    <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ background: "#1C2B35" }} />
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#8FA4B2" }}>RÉGLO</div>
-                      <div className="text-[14px] font-black" style={{ color: "#1C2B35" }}>418 / 500</div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: 'var(--t4)' }}
+                    >
+                      ClearGo Score
+                    </p>
+                    <p
+                      className="mt-1.5 inline-block rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.1em] text-white"
+                      style={{ background: 'var(--green-cta)' }}
+                    >
+                      Maîtrisé
+                    </p>
+
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--cleargo-navy)' }} />
+                        <span className="text-[11.5px]" style={{ color: 'var(--t4)' }}>Réglo</span>
+                        <span className="num ml-auto text-[13px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+                          418
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--green-cta)' }} />
+                        <span className="text-[11.5px]" style={{ color: 'var(--t4)' }}>Excellence</span>
+                        <span className="num ml-auto text-[13px] font-bold" style={{ color: 'var(--green-text)' }}>
+                          402
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-lg border p-3" style={{ borderColor: "#D5DFE5" }}>
-                    <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ background: "#4A7B8C" }} />
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#8FA4B2" }}>EXCELLENCE</div>
-                      <div className="text-[14px] font-black" style={{ color: "#4A7B8C" }}>402 / 500</div>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Share pill */}
+                {/* Réglo — dans la carte : posé sur la photo, le texte gris était illisible */}
                 <div
-                  className="mt-3 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5"
-                  style={{ background: "rgba(74,123,140,0.08)", border: "1px solid rgba(74,123,140,0.25)" }}
+                  className="mt-5 flex items-center gap-3 border-t pt-4"
+                  style={{ borderColor: 'var(--line-l)' }}
                 >
-                  <span className="text-[13px]">📋</span>
-                  <span className="text-[13px] font-semibold" style={{ color: "#4A7B8C" }}>
-                    Partageable en 1 clic sur vos AO
-                  </span>
+                  <ClearGoIcon name="reglo" size={30} className="shrink-0" />
+                  <p className="text-[11.5px] leading-snug" style={{ color: 'var(--t4)' }}>
+                    Exemple de restitution. Votre score dépend du périmètre applicable à votre
+                    activité.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#5E7485" }}>Découvrir</span>
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-          <path d="M10 4v12M4 10l6 6 6-6" stroke="#5E7485" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-
-      {/* Bottom stripe */}
-      <div className="blue-stripe absolute bottom-0 left-0 right-0" />
     </section>
   )
 }
