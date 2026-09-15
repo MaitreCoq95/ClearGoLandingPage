@@ -76,6 +76,49 @@ export const FUNNEL_QUESTIONS: FunnelQuestion[] = [
   },
 ]
 
+export type Answers = Record<string, string | string[]>
+
+export interface FunnelBranch extends FunnelQuestion {
+  /** La branche ne s'affiche que si cette condition est vraie. */
+  condition: (a: Answers) => boolean
+}
+
+/**
+ * Branches conditionnelles.
+ *
+ * Elles ne s'ajoutent jamais au socle : elles s'affichent après lui, et
+ * seulement aux profils concernés. Le compteur les distingue explicitement
+ * (« question complémentaire ») pour ne pas reproduire l'écart entre ce qui
+ * est annoncé et ce qui est demandé.
+ *
+ * Une branche n'existe que si elle change la restitution. Celle-ci précise le
+ * point à clarifier — sans elle, le profil sous-traitant recevrait une lecture
+ * générique.
+ */
+export const FUNNEL_BRANCHES: FunnelBranch[] = [
+  {
+    id: 'suivi_sous_traitants',
+    label: 'Comment suivez-vous aujourd’hui les documents de vos partenaires ?',
+    // Question sensible : les intitulés décrivent une organisation, ils ne
+    // jugent pas. « Pas encore systématique » est une réponse comme une autre.
+    options: [
+      'Tout est centralisé et suivi régulièrement',
+      'Les informations sont réparties dans plusieurs outils',
+      'Nous vérifions surtout lorsqu’une demande arrive',
+      'Le suivi n’est pas encore systématique',
+      'Je ne sais pas précisément',
+    ],
+    condition: (a) =>
+      recourtALaSousTraitance(typeof a.role_transport === 'string' ? a.role_transport : undefined) ||
+      a.besoin_principal === 'Mieux suivre mes sous-traitants',
+  },
+]
+
+/** Branches applicables au profil, dans l'ordre de déclaration. */
+export function branchesApplicables(a: Answers): FunnelBranch[] {
+  return FUNNEL_BRANCHES.filter((b) => b.condition(a))
+}
+
 /**
  * Valeur envoyée au CRM pour `q_role_transport`.
  *

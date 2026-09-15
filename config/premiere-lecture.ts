@@ -26,7 +26,7 @@
  * lecture : la session reste anonyme jusqu'à l'account gate (décision B3).
  */
 
-import { recourtALaSousTraitance } from './funnel-questions'
+import { recourtALaSousTraitance, type Answers } from './funnel-questions'
 
 export interface PremiereLecture {
   /** Reformulation fidèle de ce que le visiteur vient de déclarer. */
@@ -38,8 +38,6 @@ export interface PremiereLecture {
   /** Vrai quand aucune réponse ne permet mieux que la variante neutre. */
   neutre: boolean
 }
-
-type Answers = Record<string, string | string[]>
 
 function texte(a: Answers, id: string): string | undefined {
   const v = a[id]
@@ -109,14 +107,63 @@ const NEUTRE = {
 }
 
 /**
+ * Point d'attention du profil sous-traitant.
+ *
+ * La réponse à la branche précise le point, elle ne le juge pas : un suivi
+ * « pas encore systématique » n'est pas une faute, c'est l'état ordinaire de
+ * la plupart des entreprises. L'audit met explicitement en garde contre le
+ * jugement immédiat sur cette question (§9, Q5b).
+ */
+function pointSousTraitance(suivi: string | undefined): PremiereLecture['attention'] {
+  const DETAIL: Record<string, string> = {
+    'Tout est centralisé et suivi régulièrement':
+      'Votre organisation est en place. Le point à clarifier devient la preuve : ' +
+      'pouvoir montrer, à une date donnée, que chaque pièce était valide.',
+    'Les informations sont réparties dans plusieurs outils':
+      'Quand les pièces vivent dans plusieurs outils, elles sont rarement perdues — ' +
+      'elles sont longues à rassembler. C’est ce délai qui pose problème le jour d’une demande.',
+    'Nous vérifions surtout lorsqu’une demande arrive':
+      'Vérifier à la demande fonctionne tant que la demande arrive avec du délai. ' +
+      'Le point à clarifier est ce qui se passe quand elle arrive sans délai.',
+    'Le suivi n’est pas encore systématique':
+      'C’est le cas de la majorité des entreprises qui sous-traitent. Le point à ' +
+      'clarifier n’est pas le retard, c’est par quel partenaire commencer.',
+    'Je ne sais pas précisément':
+      'Ne pas savoir où en est le suivi est déjà une information utile : c’est le ' +
+      'premier point que l’analyse permet de fixer.',
+  }
+
+  return {
+    titre: 'Ce que vous détenez sur vos partenaires',
+    detail:
+      (suivi && DETAIL[suivi]) ||
+      'Faire appel à des partenaires ne transfère pas la responsabilité : licence, ' +
+        'attestations sociales et assurances doivent être à jour et récupérables. ' +
+        'Le point à clarifier est la fréquence à laquelle vous les actualisez.',
+    origine: suivi
+      ? 'D’après la façon dont vous suivez vos partenaires'
+      : 'Parce qu’une partie de vos flux passe par des partenaires',
+  }
+}
+
+/**
  * Point d'attention. L'ordre des tests est l'ordre de spécificité : une
- * marchandise réglementée passe avant un mode d'exécution, qui passe avant
- * une zone.
+ * marchandise réglementée passe avant une zone.
  */
 function pointAttention(a: Answers): PremiereLecture['attention'] {
   const marchandise = texte(a, 'type_marchandise')
   const zones = liste(a, 'zones_livraison')
   const role = texte(a, 'role_transport')
+  const suivi = texte(a, 'suivi_sous_traitants')
+
+  /*
+   * La branche passe avant tout le reste dès qu'elle a été posée. Une question
+   * complémentaire qui ne changerait pas la restitution serait du temps demandé
+   * sans contrepartie — c'est précisément ce que le test de légitimité de
+   * l'audit (§10) interdit. Un profil pharma ET sous-traitant recevrait sinon
+   * le point pharma, et la branche n'aurait servi à rien.
+   */
+  if (suivi || recourtALaSousTraitance(role)) return pointSousTraitance(suivi)
 
   if (marchandise === 'Matières dangereuses (ADR)') {
     return {
@@ -151,16 +198,6 @@ function pointAttention(a: Answers): PremiereLecture['attention'] {
     }
   }
 
-  if (recourtALaSousTraitance(role)) {
-    return {
-      titre: 'Ce que vous détenez sur vos sous-traitants',
-      detail:
-        'Faire appel à des partenaires ne transfère pas la responsabilité : licence, ' +
-        'attestations sociales et assurances doivent être à jour et récupérables. ' +
-        'Le point à clarifier est la fréquence à laquelle vous les actualisez.',
-      origine: 'Parce qu’une partie de vos flux passe par des partenaires',
-    }
-  }
 
   if (zones.includes('International')) {
     return {
