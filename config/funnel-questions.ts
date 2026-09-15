@@ -2,11 +2,14 @@
  * Questions du funnel de pré-qualification ClearGo.
  *
  * TODO: formulation finale en attente de validation Laury (deadline 20/09).
- * Ce fichier est volontairement isolé pour que les questions puissent être
- * ajustées sans toucher au composant.
+ * L'audit du 15/09 orthographie « Laurie » — divergence à trancher.
  *
- * L'étape 0 (SIRET) est gérée séparément dans prequal-funnel.tsx : elle
- * interroge le registre national et pré-remplit ce qui peut l'être.
+ * Ordre issu de l'audit du 15/09 : le déclencheur passe en première question.
+ * Sa réponse oriente la restitution ET la route de sortie ; la demander en
+ * cinquième position revenait à commencer par de la segmentation.
+ *
+ * Aucune donnée d'identité ici (décision B3 du 12/09) : ni SIRET, ni nom, ni
+ * ville. L'identité arrive à l'account gate, après la première lecture.
  */
 
 export interface FunnelQuestion {
@@ -15,46 +18,55 @@ export interface FunnelQuestion {
   /** Réponses multiples autorisées. */
   multiple?: boolean
   options: string[]
-  /** Affiché sous la question quand la valeur vient du registre. */
-  prefillHint?: string
+  /** Réponse qui vaut refus de répondre : ne doit rien déclencher en aval. */
+  optOut?: string
 }
 
 export const FUNNEL_QUESTIONS: FunnelQuestion[] = [
   {
+    id: 'besoin_principal',
+    label: "Qu'est-ce qui vous amène aujourd'hui ?",
+    options: [
+      "Savoir où j'en suis",
+      'Préparer un contrôle ou une demande',
+      "Répondre à des appels d'offres",
+      "Satisfaire un donneur d'ordres",
+      'Mieux suivre mes sous-traitants',
+      'Je découvre ClearGo',
+    ],
+  },
+  {
     id: 'type_marchandise',
-    label: 'Quel type de marchandises transportez-vous ?',
-    options: ['Générales', 'Pharma & température dirigée', 'ADR', 'Alimentaire', 'Autre'],
+    label: 'Que transportez-vous principalement ?',
+    options: [
+      'Marchandises générales',
+      'Produits alimentaires',
+      'Produits sous température dirigée',
+      'Produits de santé et pharmaceutiques',
+      'Matières dangereuses (ADR)',
+      'Autre activité',
+    ],
   },
   {
     id: 'zones_livraison',
-    label: 'Sur quelles zones livrez-vous ?',
+    label: 'Où réalisez-vous vos transports ?',
     multiple: true,
     options: ['Régional', 'National', 'International'],
   },
   {
     id: 'taille_flotte',
-    label: 'Combien de véhicules dans votre flotte ?',
-    options: ['1-5', '6-20', '21-50', 'Plus de 50'],
-    prefillHint: 'Estimé depuis le registre. Corrigez si nécessaire.',
+    label: 'Sur combien de véhicules repose votre activité ?',
+    options: ['1-5', '6-20', '21-50', 'Plus de 50', 'Je préfère ne pas répondre'],
+    optOut: 'Je préfère ne pas répondre',
   },
   {
     id: 'role_transport',
-    label: 'Quel est votre rôle dans la chaîne ?',
+    label: 'Qui réalise principalement vos transports ?',
     options: [
-      "J'exécute mes transports",
-      'Je sous-traite une partie de mes flux',
-      'Je suis commissionnaire',
-      "Les deux — j'exécute et je sous-traite",
-    ],
-  },
-  {
-    id: 'besoin_principal',
-    label: 'Quel est votre besoin principal ?',
-    options: [
-      "Répondre à des appels d'offres",
-      'Préparer un contrôle',
-      "Satisfaire un donneur d'ordres",
-      "Savoir où j'en suis",
+      'Nos propres conducteurs',
+      'Nos conducteurs, avec un appui extérieur ponctuel',
+      'Un équilibre entre nos moyens et la sous-traitance',
+      'Principalement des partenaires ou sous-traitants',
     ],
   },
   {
@@ -64,12 +76,24 @@ export const FUNNEL_QUESTIONS: FunnelQuestion[] = [
   },
 ]
 
-/** Valeur envoyée au CRM pour `q_role_transport`. */
+/**
+ * Valeur envoyée au CRM pour `q_role_transport`.
+ *
+ * Les libellés sont passés du vocabulaire contractuel (« commissionnaire »)
+ * au vocabulaire terrain, mais les codes transmis restent inchangés : le CRM
+ * n'a pas à être redéployé pour un changement de formulation.
+ */
 export const ROLE_TRANSPORT_CODES: Record<string, string> = {
-  "J'exécute mes transports": 'executant',
-  'Je sous-traite une partie de mes flux': 'sous_traitant',
-  'Je suis commissionnaire': 'commissionnaire',
-  "Les deux — j'exécute et je sous-traite": 'hybride',
+  'Nos propres conducteurs': 'executant',
+  'Nos conducteurs, avec un appui extérieur ponctuel': 'executant',
+  'Un équilibre entre nos moyens et la sous-traitance': 'hybride',
+  'Principalement des partenaires ou sous-traitants': 'sous_traitant',
+}
+
+/** Vrai dès que le profil confie une part significative de ses flux. */
+export function recourtALaSousTraitance(roleLabel: string | undefined): boolean {
+  const code = roleLabel ? ROLE_TRANSPORT_CODES[roleLabel] : undefined
+  return code === 'hybride' || code === 'sous_traitant'
 }
 
 /** Convertit la tranche de flotte en nombre exploitable côté CRM. */
@@ -84,17 +108,10 @@ export function parseFleetSize(label: string | undefined): number | null {
     case 'Plus de 50':
       return 51
     default:
+      // Couvre aussi « Je préfère ne pas répondre » : un refus de répondre ne
+      // doit jamais se transformer en estimation côté CRM.
       return null
   }
-}
-
-/** Déduit la tranche de flotte la plus probable depuis le proxy du registre. */
-export function fleetBucketFromProxy(proxyFlotte: number | null | undefined): string | null {
-  if (proxyFlotte == null || Number.isNaN(proxyFlotte)) return null
-  if (proxyFlotte <= 5) return '1-5'
-  if (proxyFlotte <= 20) return '6-20'
-  if (proxyFlotte <= 50) return '21-50'
-  return 'Plus de 50'
 }
 
 export type UrgenceLevel = 'urgent_chaud' | 'tiede' | 'froid'

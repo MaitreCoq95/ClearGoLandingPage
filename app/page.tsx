@@ -26,16 +26,8 @@ import { PrequalFunnel } from '@/components/landing/prequal-funnel'
 function LandingContent() {
   const isKiosk = useKioskMode()
   const [funnelOpen, setFunnelOpen] = useState(false)
-  const [initialSiret, setInitialSiret] = useState('')
 
-  const openFunnel = () => {
-    setInitialSiret('')
-    setFunnelOpen(true)
-  }
-  const openFunnelWithSiret = (siret: string) => {
-    setInitialSiret(siret)
-    setFunnelOpen(true)
-  }
+  const openFunnel = () => setFunnelOpen(true)
   const closeFunnel = () => setFunnelOpen(false)
 
   return (
@@ -56,14 +48,14 @@ function LandingContent() {
       <Referentiels />
       <ProfilConformite />
       <Accompagnement onCta={openFunnel} />
-      <Inscription onStart={openFunnelWithSiret} />
+      <Inscription onStart={openFunnel} />
       <Team />
 
       {!isKiosk && <Footer />}
       {!isKiosk && <StickyMobileCta onCta={openFunnel} />}
       {isKiosk && <KioskBanner />}
 
-      <PrequalFunnel open={funnelOpen} onClose={closeFunnel} initialSiret={initialSiret} />
+      <PrequalFunnel open={funnelOpen} onClose={closeFunnel} />
     </main>
   )
 }
