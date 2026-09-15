@@ -6,8 +6,12 @@ import {
   FUNNEL_QUESTIONS,
   LICENCE_URGENCE_JOURS,
   ROLE_TRANSPORT_CODES,
+  branchesApplicables,
   mapUrgence,
   parseFleetSize,
+  type Answers,
+  type FunnelBranch,
+  type FunnelQuestion,
 } from '@/config/funnel-questions'
 import { construireLecture, type PremiereLecture } from '@/config/premiere-lecture'
 import {
@@ -54,6 +58,12 @@ const IconCheck = () => (
     <path d="M3 8.5L6.5 12L13 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
+const Spinner = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="animate-spin">
+    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity=".25" />
+    <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
 
 /** Réponse de /api/qualify — déjà assainie côté serveur. */
 interface QualifyResult {
@@ -64,7 +74,25 @@ interface QualifyResult {
   perimetre: { referentiels: string[]; nb_domaines: number } | null
 }
 
-type Phase = 'contrat' | 'questions' | 'lecture' | 'compte' | 'sortie'
+type Phase = 'contrat' | 'questions' | 'branches' | 'lecture' | 'compte' | 'sortie'
+
+/** Données publiques du registre — le proxy n'en laisse pas sortir d'autres. */
+interface RegistryData {
+  raison_sociale?: string
+  gestionnaire_transport?: string
+  commune?: string
+  departement?: string
+  fin_validite_lti?: string | null
+  jours_avant_expiration?: number | null
+}
+
+type SiretStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'unavailable'
+
+/** Masque de saisie 3-3-3-5 : 424 644 201 00032 */
+function formatSiret(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 14)
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 14)].filter(Boolean).join(' ')
+}
 
 interface PrequalFunnelProps {
   open: boolean
@@ -76,9 +104,17 @@ const TOTAL_Q = FUNNEL_QUESTIONS.length
 export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const [phase, setPhase] = useState<Phase>('contrat')
   const [step, setStep] = useState(0)
+  const [branchStep, setBranchStep] = useState(0)
+  const [branches, setBranches] = useState<FunnelBranch[]>([])
 
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
+  const [answers, setAnswers] = useState<Answers>({})
   const [lecture, setLecture] = useState<PremiereLecture | null>(null)
+
+  // SIRET : facultatif, et seulement à l'account gate. Il ne sert qu'à éviter
+  // une ressaisie au transporteur qui l'a sous la main.
+  const [siret, setSiret] = useState('')
+  const [siretStatus, setSiretStatus] = useState<SiretStatus>('idle')
+  const [registry, setRegistry] = useState<RegistryData | null>(null)
 
   const [email, setEmail] = useState('')
   const [prenom, setPrenom] = useState('')
@@ -96,8 +132,13 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const reset = useCallback(() => {
     setPhase('contrat')
     setStep(0)
+    setBranchStep(0)
+    setBranches([])
     setAnswers({})
     setLecture(null)
+    setSiret('')
+    setSiretStatus('idle')
+    setRegistry(null)
     setEmail('')
     setPrenom('')
     setTelephone('')
@@ -130,8 +171,55 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
-  /** Fin du socle : la lecture est construite localement, rien n'est envoyé. */
-  function terminerQuestions(finales: Record<string, string | string[]>) {
+  // Vérification du registre, uniquement quand 14 chiffres sont saisis à
+  // l'account gate. Elle n'est jamais bloquante : le parcours continue quel
+  // que soit son résultat.
+  useEffect(() => {
+    const digits = siret.replace(/\D/g, '')
+    if (digits.length !== 14) {
+      setSiretStatus('idle')
+      setRegistry(null)
+      return
+    }
+
+    let cancelled = false
+    setSiretStatus('loading')
+
+    fetch(`/api/verify-siret/${digits}`)
+      .then((r) => r.json())
+      .then((data: RegistryData & { found?: boolean; reason?: string }) => {
+        if (cancelled) return
+        if (data.found) {
+          setRegistry(data)
+          setSiretStatus('found')
+        } else {
+          setRegistry(null)
+          setSiretStatus(data.reason === 'registry_unavailable' ? 'unavailable' : 'not_found')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSiretStatus('unavailable')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [siret])
+
+  /** Fin du socle : on n'affiche que les branches que le profil justifie. */
+  function terminerQuestions(finales: Answers) {
+    const applicables = branchesApplicables(finales)
+    setBranches(applicables)
+    if (applicables.length > 0) {
+      setBranchStep(0)
+      setPhase('branches')
+      return
+    }
+    setLecture(construireLecture(finales))
+    setPhase('lecture')
+  }
+
+  function terminerBranches(finales: Answers) {
     setLecture(construireLecture(finales))
     setPhase('lecture')
   }
@@ -150,6 +238,13 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
     const next = { ...answers, [id]: value }
     setAnswers(next)
+
+    if (phase === 'branches') {
+      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
+      else terminerBranches(next)
+      return
+    }
+
     if (step < TOTAL_Q - 1) setStep(step + 1)
     else terminerQuestions(next)
   }
@@ -160,8 +255,20 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
       return
     }
     if (phase === 'lecture') {
-      setPhase('questions')
-      setStep(TOTAL_Q - 1)
+      if (branches.length > 0) {
+        setBranchStep(branches.length - 1)
+        setPhase('branches')
+      } else {
+        setStep(TOTAL_Q - 1)
+        setPhase('questions')
+      }
+      return
+    }
+    if (phase === 'branches') {
+      if (branchStep === 0) {
+        setStep(TOTAL_Q - 1)
+        setPhase('questions')
+      } else setBranchStep(branchStep - 1)
       return
     }
     if (phase === 'questions') {
@@ -177,24 +284,28 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
     const zones = Array.isArray(answers.zones_livraison) ? (answers.zones_livraison as string[]) : []
     const roleLabel = typeof answers.role_transport === 'string' ? answers.role_transport : ''
+    const siretDigits = siret.replace(/\D/g, '')
 
     try {
       const res = await fetch('/api/qualify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Aucune donnée d'identité d'entreprise : le proxy les écarterait de
-        // toute façon, mais les émettre les ferait quand même quitter le
-        // navigateur pour rien.
+        // Le SIRET ne part qu'ici, et seulement s'il a été saisi : jusqu'à cet
+        // écran, la session est anonyme (décision B3). À l'account gate, le
+        // transporteur donne son identité — le transmettre a alors un sens.
         body: JSON.stringify({
           email,
           prenom,
           telephone,
+          siret: siretDigits || null,
+          siret_non_verifie: siretDigits ? siretStatus !== 'found' : null,
           q_type_marchandise: answers.type_marchandise ?? '',
           q_zones_livraison: zones,
           q_nb_vehicules_declare: parseFleetSize(answers.taille_flotte as string | undefined),
           q_role_transport: ROLE_TRANSPORT_CODES[roleLabel] ?? '',
           q_besoin_principal: answers.besoin_principal ?? '',
           q_urgence: answers.urgence ?? '',
+          q_suivi_sous_traitants: answers.suivi_sous_traitants ?? '',
         }),
       })
       const json = (await res.json()) as QualifyResult
@@ -210,26 +321,50 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
   if (!open) return null
 
-  const q = FUNNEL_QUESTIONS[step]
+  const q: FunnelQuestion | undefined =
+    phase === 'branches' ? branches[branchStep] : FUNNEL_QUESTIONS[step]
   const currentValue = q ? answers[q.id] : undefined
   const multiSelection = Array.isArray(currentValue) ? currentValue : []
 
+  /*
+   * Le compteur distingue le socle des branches (audit, P0.4). Une branche
+   * n'est jamais annoncée comme « question 7 sur 6 » : elle se présente pour
+   * ce qu'elle est, une question posée parce que le profil la justifie.
+   */
   const headerLabel =
     phase === 'contrat'
       ? 'Avant de commencer'
       : phase === 'questions'
         ? `Question ${step + 1} sur ${TOTAL_Q}`
-        : phase === 'lecture'
-          ? 'Votre première lecture'
-          : phase === 'compte'
-            ? 'Ouvrir votre espace'
-            : 'Votre prochain pas'
+        : phase === 'branches'
+          ? branches.length > 1
+            ? `Question complémentaire ${branchStep + 1} sur ${branches.length}`
+            : 'Question complémentaire'
+          : phase === 'lecture'
+            ? 'Votre première lecture'
+            : phase === 'compte'
+              ? 'Ouvrir votre espace'
+              : 'Votre prochain pas'
 
-  // Le compteur et la barre décrivent la même chose : six questions, six pas.
+  /*
+   * Les conditions de branche ne portent que sur des réponses déjà données
+   * (Q1 et Q5) : la barre peut donc savoir, pendant le socle, si une question
+   * complémentaire suivra. Elle réserve alors les dix derniers pour cent —
+   * sans quoi elle atteindrait 100 % avant la dernière question posée.
+   */
+  const branchesPrevues = phase === 'questions' ? branchesApplicables(answers) : branches
+  const finSocle = branchesPrevues.length > 0 ? 90 : 100
   const progress =
-    phase === 'contrat' ? 0 : phase === 'questions' ? ((step + 1) / TOTAL_Q) * 100 : 100
+    phase === 'contrat'
+      ? 0
+      : phase === 'questions'
+        ? ((step + 1) / TOTAL_Q) * finSocle
+        : phase === 'branches'
+          ? finSocle + ((branchStep + 1) / branches.length) * 10
+          : 100
 
-  const peutRevenir = phase === 'questions' || phase === 'lecture' || phase === 'compte'
+  const peutRevenir =
+    phase === 'questions' || phase === 'branches' || phase === 'lecture' || phase === 'compte'
 
   return (
     <div
@@ -293,8 +428,15 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           {phase === 'contrat' && <ContratEntree onStart={() => setPhase('questions')} onClose={onClose} />}
 
           {/* ═══ Questions ═════════════════════════════════════════════════ */}
-          {phase === 'questions' && q && (
+          {(phase === 'questions' || phase === 'branches') && q && (
             <div key={q.id} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
+              {/* Dire pourquoi la question apparaît : elle n'est pas posée à tout le monde. */}
+              {phase === 'branches' && (
+                <p className="mb-2 text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
+                  Vous nous avez dit travailler avec des partenaires — cette question nous permet
+                  d’être précis sur ce point.
+                </p>
+              )}
               <h3 className="mb-1 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
                 {q.label}
               </h3>
@@ -342,9 +484,13 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 <button
                   type="button"
                   disabled={multiSelection.length === 0}
-                  onClick={() =>
-                    step < TOTAL_Q - 1 ? setStep(step + 1) : terminerQuestions(answers)
-                  }
+                  onClick={() => {
+                    if (phase === 'branches') {
+                      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
+                      else terminerBranches(answers)
+                    } else if (step < TOTAL_Q - 1) setStep(step + 1)
+                    else terminerQuestions(answers)
+                  }}
                   className="btn-press mt-4 w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
                   style={{ background: 'var(--green-cta)' }}
                 >
@@ -418,6 +564,13 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                 </div>
               </div>
 
+              <SiretFacultatif
+                value={siret}
+                onChange={setSiret}
+                status={siretStatus}
+                registry={registry}
+              />
+
               <button
                 type="submit"
                 disabled={sending}
@@ -459,6 +612,105 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
         <div className="h-1 shrink-0" style={{ background: 'var(--green-cta)' }} />
       </div>
+    </div>
+  )
+}
+
+// ── SIRET facultatif ────────────────────────────────────────────────────────
+
+/**
+ * Le SIRET n'apporte rien au visiteur tant qu'il n'a pas décidé d'ouvrir un
+ * espace : il ne sert qu'à lui épargner une ressaisie à l'étape suivante.
+ * Il est donc replié par défaut, et proposé — pas demandé.
+ */
+function SiretFacultatif({
+  value,
+  onChange,
+  status,
+  registry,
+}: {
+  value: string
+  onChange: (v: string) => void
+  status: SiretStatus
+  registry: RegistryData | null
+}) {
+  const [ouvert, setOuvert] = useState(false)
+
+  if (!ouvert) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOuvert(true)}
+        className="mt-4 flex w-full items-center gap-2.5 rounded-xl border border-dashed px-4 py-3 text-left text-[13px] font-semibold"
+        style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
+      >
+        <span aria-hidden="true" style={{ color: 'var(--green-text)' }}>+</span>
+        J’ai mon SIRET sous la main — gagner du temps à l’étape suivante
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'var(--line)' }}>
+      <label htmlFor="siret" className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+        SIRET
+        <span className="font-semibold normal-case tracking-normal" style={{ color: 'var(--t4)' }}>
+          · facultatif
+        </span>
+        {status === 'loading' && <span style={{ color: 'var(--green)' }}><Spinner /></span>}
+      </label>
+      <input
+        id="siret"
+        inputMode="numeric"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => onChange(formatSiret(e.target.value))}
+        placeholder="424 644 201 00032"
+        className="num w-full rounded-xl border-2 px-4 py-3 text-[16px] font-medium outline-none"
+        style={{
+          borderColor: status === 'found' ? 'var(--green)' : 'var(--line)',
+          background: status === 'found' ? 'var(--green-pale)' : 'var(--surface)',
+          color: 'var(--cleargo-navy)',
+        }}
+        autoFocus
+      />
+
+      {status === 'found' && registry?.raison_sociale && (
+        <p className="mt-2 flex items-start gap-2 text-[13px]" style={{ color: 'var(--green-text)' }}>
+          <span className="mt-0.5 shrink-0"><IconCheck /></span>
+          <span>
+            <span className="font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+              {registry.raison_sociale}
+            </span>
+            {registry.commune ? ` · ${registry.commune}` : ''} — nous préremplirons votre dossier.
+          </span>
+        </p>
+      )}
+
+      {/* Aucun de ces cas ne bloque l'envoi : le SIRET reste facultatif. */}
+      {status === 'not_found' && (
+        <p className="mt-2 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+          Ce numéro n’apparaît pas au registre national des transporteurs. Vous pouvez continuer :
+          nous le vérifierons avec vous.
+        </p>
+      )}
+      {status === 'unavailable' && (
+        <p className="mt-2 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+          La vérification est momentanément indisponible. Votre numéro est conservé, continuez.
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          onChange('')
+          setOuvert(false)
+        }}
+        className="mt-3 text-[12.5px] font-semibold"
+        style={{ color: 'var(--t4)' }}
+      >
+        Finalement, je le donnerai plus tard
+      </button>
     </div>
   )
 }

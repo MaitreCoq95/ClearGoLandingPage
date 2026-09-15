@@ -152,12 +152,23 @@ export async function POST(req: Request) {
 
   const zones = Array.isArray(body.q_zones_livraison) ? (body.q_zones_livraison as string[]) : []
 
-  // La session publique est anonyme (décision B3/B12 du 07/09) : ni SIREN, ni
-  // ville, ni nom d'entreprise ne transitent avant l'account gate.
+  /*
+   * La session publique est anonyme (décision B3/B12) : les six questions ne
+   * transportent aucune donnée d'identité. Cet appel n'a lieu qu'à l'account
+   * gate, où le visiteur donne volontairement ses coordonnées — le SIRET y est
+   * admis, s'il l'a saisi.
+   *
+   * Il reste facultatif et n'est jamais affiché publiquement : il contient le
+   * SIREN, donnée personnelle sur une entreprise individuelle.
+   */
+  const siret = typeof body.siret === 'string' ? body.siret.replace(/\D/g, '') : ''
+
   const payload = {
     email: body.email ?? '',
     prenom: body.prenom ?? '',
     telephone: body.telephone ?? '',
+    siret: siret.length === 14 ? siret : null,
+    siret_non_verifie: siret.length === 14 ? body.siret_non_verifie === true : null,
     q_type_marchandise: body.q_type_marchandise ?? '',
     q_zones_livraison: zones,
     q_has_international: zones.includes('International'),
@@ -165,6 +176,7 @@ export async function POST(req: Request) {
     q_role_transport: body.q_role_transport ?? '',
     q_besoin_principal: body.q_besoin_principal ?? '',
     q_urgence: body.q_urgence ?? '',
+    q_suivi_sous_traitants: body.q_suivi_sous_traitants ?? '',
     source: 'landing',
   }
 
