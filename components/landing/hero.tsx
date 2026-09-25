@@ -2,74 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
-import { useReveal } from '@/hooks/use-reveal'
-
-/**
- * Anneau ClearGo Score.
- * Anneau extérieur = RÉGLO, anneau intérieur = EXCELLENCE.
- * Le palier suit la grille officielle (Insuffisant / En construction /
- * Maîtrisé / Excellence) — jamais de métaux, jamais de mention « certifié ».
- */
-function ScoreRing({ animated }: { animated: boolean }) {
-  const rOuter = 88
-  const rInner = 64
-  const circOuter = 2 * Math.PI * rOuter
-  const circInner = 2 * Math.PI * rInner
-
-  const [started, setStarted] = useState(false)
-
-  useEffect(() => {
-    if (!animated) return
-    const t = setTimeout(() => setStarted(true), 200)
-    return () => clearTimeout(t)
-  }, [animated])
-
-  const outerOffset = circOuter * (1 - (started ? 418 / 500 : 0))
-  const innerOffset = circInner * (1 - (started ? 402 / 500 : 0))
-
-  return (
-    <svg
-      viewBox="0 0 200 200"
-      className="h-full w-full"
-      role="img"
-      aria-label="ClearGo Score : 820 sur 1000, niveau maîtrisé"
-    >
-      <circle cx="100" cy="100" r={rOuter} fill="none" stroke="#E2E8F0" strokeWidth="12" />
-      <circle cx="100" cy="100" r={rInner} fill="none" stroke="#E2E8F0" strokeWidth="10" />
-
-      <circle
-        cx="100" cy="100" r={rOuter}
-        fill="none" stroke="#0D2B5E" strokeWidth="12" strokeLinecap="round"
-        strokeDasharray={circOuter} strokeDashoffset={outerOffset}
-        transform="rotate(-90 100 100)"
-        style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)' }}
-      />
-      <circle
-        cx="100" cy="100" r={rInner}
-        fill="none" stroke="#27AE60" strokeWidth="10" strokeLinecap="round"
-        strokeDasharray={circInner} strokeDashoffset={innerOffset}
-        transform="rotate(-90 100 100)"
-        style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1) 0.15s' }}
-      />
-
-      <text
-        x="50%" y="48%" textAnchor="middle" dominantBaseline="middle"
-        fill="#0D2B5E" fontFamily="var(--font-jetbrains), monospace"
-        fontSize="46" fontWeight="700" letterSpacing="-2"
-      >
-        820
-      </text>
-      <text
-        x="50%" y="62%" textAnchor="middle" dominantBaseline="middle"
-        fill="#5B6B80" fontFamily="var(--font-jetbrains), monospace"
-        fontSize="12" fontWeight="500" letterSpacing="1.5"
-      >
-        / 1000
-      </text>
-    </svg>
-  )
-}
 
 interface HeroProps {
   onCta: () => void
@@ -77,7 +9,6 @@ interface HeroProps {
 
 export function Hero({ onCta }: HeroProps) {
   const [loaded, setLoaded] = useState(false)
-  const { ref: cardRef, visible: cardVisible } = useReveal<HTMLDivElement>(0.25)
 
   useEffect(() => {
     const t = setTimeout(() => setLoaded(true), 60)
@@ -202,8 +133,8 @@ export function Hero({ onCta }: HeroProps) {
             </p>
           </div>
 
-          {/* Colonne droite : photo sur mobile, carte de score flottante sur desktop.
-              Alignée en bas pour dégager le visage sur la photo. */}
+          {/* Colonne droite : photo sur mobile. La carte de score d'exemple (820)
+              est retirée : aucun score fictif sur la landing (décision B9, 22/09). */}
           <div className="lg:flex lg:justify-end lg:self-end lg:pb-4">
 
             {/* Sur mobile la photo passe en pleine largeur — en desktop elle est en fond */}
@@ -221,71 +152,6 @@ export function Hero({ onCta }: HeroProps) {
               </div>
             </div>
 
-            {/* Carte de score — posée sur la photo en desktop */}
-            <div
-              ref={cardRef}
-              className="mx-auto mt-8 w-full max-w-[330px] lg:mx-0 lg:mt-0"
-              style={{
-                opacity: loaded ? 1 : 0,
-                transform: loaded ? 'translateY(0)' : 'translateY(24px)',
-                transition: 'opacity .9s var(--ease-apple) .35s, transform .9s var(--ease-apple) .35s',
-              }}
-            >
-              <div
-                className="rounded-2xl bg-white p-6"
-                style={{ boxShadow: '0 24px 60px -20px rgba(13,43,94,0.28), 0 0 0 1px rgba(13,43,94,0.05)' }}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="shrink-0" style={{ width: 112, height: 112 }}>
-                    <ScoreRing animated={cardVisible} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
-                      style={{ color: 'var(--t4)' }}
-                    >
-                      ClearGo Score
-                    </p>
-                    <p
-                      className="mt-1.5 inline-block rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.1em] text-white"
-                      style={{ background: 'var(--green-cta)' }}
-                    >
-                      Maîtrisé
-                    </p>
-
-                    <div className="mt-3 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--cleargo-navy)' }} />
-                        <span className="text-[11.5px]" style={{ color: 'var(--t4)' }}>Réglo</span>
-                        <span className="num ml-auto text-[13px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
-                          418
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--green-cta)' }} />
-                        <span className="text-[11.5px]" style={{ color: 'var(--t4)' }}>Excellence</span>
-                        <span className="num ml-auto text-[13px] font-bold" style={{ color: 'var(--green-text)' }}>
-                          402
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Réglo — dans la carte : posé sur la photo, le texte gris était illisible */}
-                <div
-                  className="mt-5 flex items-center gap-3 border-t pt-4"
-                  style={{ borderColor: 'var(--line-l)' }}
-                >
-                  <ClearGoIcon name="reglo" size={30} className="shrink-0" />
-                  <p className="text-[11.5px] leading-snug" style={{ color: 'var(--t4)' }}>
-                    Exemple de restitution. Votre score dépend du périmètre applicable à votre
-                    activité.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
