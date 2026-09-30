@@ -33,17 +33,27 @@ export function Navbar({ onCta }: NavbarProps) {
       }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-12">
+        {/*
+          Le logo animé vit sur un blob externe que nous ne maîtrisons pas. Le
+          logo fixe est posé dessous : si le blob disparaît, la marque reste.
+        */}
         <a
           href="#hero"
-          className="h-11 w-[170px] shrink-0 overflow-hidden rounded-lg lg:h-12 lg:w-[200px]"
+          className="relative block h-11 w-[170px] shrink-0 overflow-hidden rounded-lg lg:h-12 lg:w-[200px]"
           aria-label="ClearGo — accueil"
         >
+          <img
+            src="/images/cleargo-logo.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-contain"
+          />
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="h-full w-full object-cover"
+            className="relative h-full w-full object-cover"
             aria-hidden="true"
           >
             <source
