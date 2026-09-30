@@ -6,10 +6,14 @@ import {
   FUNNEL_QUESTIONS,
   LICENCE_URGENCE_JOURS,
   ROLE_TRANSPORT_CODES,
-  fleetBucketFromProxy,
+  branchesApplicables,
   mapUrgence,
   parseFleetSize,
+  type Answers,
+  type FunnelBranch,
+  type FunnelQuestion,
 } from '@/config/funnel-questions'
+import { construireLecture, type PremiereLecture } from '@/config/premiere-lecture'
 import {
   APP_BASE_URL,
   CALENDLY_URL,
@@ -18,6 +22,24 @@ import {
   WEBINAIRE_DATE,
   WEBINAIRE_URL,
 } from '@/config/site-links'
+
+/**
+ * Parcours de pré-qualification.
+ *
+ * Ordre des phases : contrat → questions → lecture → compte → sortie.
+ *
+ * Deux principes le structurent, et ils viennent de deux documents qui se
+ * rejoignent sans se citer :
+ *
+ * - La première valeur précède toute coordonnée (audit du 15/09, §11.3 ;
+ *   arbitrage B3 du 12/09, l'identité arrive à l'account gate).
+ * - Aucun écran n'est une impasse (audit §6.3). Chaque phase offre une sortie.
+ *
+ * Le SIRET a quitté ce parcours. Il ne demandait rien d'utile au visiteur à ce
+ * stade et bloquait l'entrée : tant qu'il n'était pas saisi, aucun bouton de
+ * continuation n'était rendu. Sa réintroduction facultative à l'account gate
+ * est en attente d'arbitrage ; le proxy de vérification reste en place.
+ */
 
 // ── Chrome SVG (aucune librairie d'icônes externe) ──────────────────────────
 
@@ -43,43 +65,6 @@ const Spinner = () => (
   </svg>
 )
 
-// ── SIRET ───────────────────────────────────────────────────────────────────
-
-/** Masque de saisie 3-3-3-5 : 424 644 201 00032 */
-function formatSiret(raw: string): string {
-  const d = raw.replace(/\D/g, '').slice(0, 14)
-  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 14)].filter(Boolean).join(' ')
-}
-
-/** Luhn — validation locale indicative, jamais bloquante côté serveur. */
-function isLuhnValid(siret: string): boolean {
-  if (siret.length !== 14) return false
-  let sum = 0
-  for (let i = 0; i < 14; i++) {
-    let n = Number(siret[13 - i])
-    if (i % 2 === 1) {
-      n *= 2
-      if (n > 9) n -= 9
-    }
-    sum += n
-  }
-  return sum % 10 === 0
-}
-
-interface RegistryData {
-  raison_sociale?: string
-  gestionnaire_transport?: string
-  commune?: string
-  departement?: string
-  licence_active?: boolean
-  fin_validite_lti?: string | null
-  fin_validite_lc?: string | null
-  jours_avant_expiration?: number | null
-  proxy_flotte?: number | null
-}
-
-type SiretStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'unavailable'
-
 /** Réponse de /api/qualify — déjà assainie côté serveur. */
 interface QualifyResult {
   status: string
@@ -89,27 +74,48 @@ interface QualifyResult {
   perimetre: { referentiels: string[]; nb_domaines: number } | null
 }
 
-// ── Composant ───────────────────────────────────────────────────────────────
+type Phase = 'contrat' | 'questions' | 'branches' | 'lecture' | 'compte' | 'sortie'
+
+/** Données publiques du registre — le proxy n'en laisse pas sortir d'autres. */
+interface RegistryData {
+  raison_sociale?: string
+  gestionnaire_transport?: string
+  commune?: string
+  departement?: string
+  fin_validite_lti?: string | null
+  jours_avant_expiration?: number | null
+}
+
+type SiretStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'unavailable'
+
+/** Masque de saisie 3-3-3-5 : 424 644 201 00032 */
+function formatSiret(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 14)
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 14)].filter(Boolean).join(' ')
+}
 
 interface PrequalFunnelProps {
   open: boolean
   onClose: () => void
-  /** SIRET déjà saisi ailleurs sur la page, repris tel quel à l'ouverture. */
-  initialSiret?: string
 }
 
 const TOTAL_Q = FUNNEL_QUESTIONS.length
 
-export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProps) {
-  // phase : 'siret' → 'questions' → 'contact' → 'sortie'
-  const [phase, setPhase] = useState<'siret' | 'questions' | 'contact' | 'sortie'>('siret')
+export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
+  const [phase, setPhase] = useState<Phase>('contrat')
   const [step, setStep] = useState(0)
+  const [branchStep, setBranchStep] = useState(0)
+  const [branches, setBranches] = useState<FunnelBranch[]>([])
 
+  const [answers, setAnswers] = useState<Answers>({})
+  const [lecture, setLecture] = useState<PremiereLecture | null>(null)
+
+  // SIRET : facultatif, et seulement à l'account gate. Il ne sert qu'à éviter
+  // une ressaisie au transporteur qui l'a sous la main.
   const [siret, setSiret] = useState('')
   const [siretStatus, setSiretStatus] = useState<SiretStatus>('idle')
   const [registry, setRegistry] = useState<RegistryData | null>(null)
 
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
   const [email, setEmail] = useState('')
   const [prenom, setPrenom] = useState('')
   const [telephone, setTelephone] = useState('')
@@ -117,22 +123,22 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
   const [sendError, setSendError] = useState(false)
   const [qualification, setQualification] = useState<QualifyResult | null>(null)
 
-  const digits = siret.replace(/\D/g, '')
-  const joursAvantExpiration = registry?.jours_avant_expiration ?? null
+  const urgenceDeclaree = typeof answers.urgence === 'string' ? answers.urgence : undefined
+  const joursAvantExpiration = qualification?.urgence_licence ?? null
   const licenceUrgente =
     joursAvantExpiration !== null && joursAvantExpiration < LICENCE_URGENCE_JOURS
-
-  const urgenceDeclaree = typeof answers.urgence === 'string' ? answers.urgence : undefined
-  // L'expiration de licence prime sur l'urgence déclarée.
   const niveauUrgence = licenceUrgente ? 'urgent_chaud' : mapUrgence(urgenceDeclaree)
 
   const reset = useCallback(() => {
-    setPhase('siret')
+    setPhase('contrat')
     setStep(0)
+    setBranchStep(0)
+    setBranches([])
+    setAnswers({})
+    setLecture(null)
     setSiret('')
     setSiretStatus('idle')
     setRegistry(null)
-    setAnswers({})
     setEmail('')
     setPrenom('')
     setTelephone('')
@@ -156,11 +162,6 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
     }
   }, [open, reset])
 
-  // Reprend le SIRET déjà saisi dans la section d'inscription
-  useEffect(() => {
-    if (open && initialSiret) setSiret(formatSiret(initialSiret))
-  }, [open, initialSiret])
-
   // Échap ferme
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -170,8 +171,11 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
-  // Vérification au registre dès 14 chiffres saisis
+  // Vérification du registre, uniquement quand 14 chiffres sont saisis à
+  // l'account gate. Elle n'est jamais bloquante : le parcours continue quel
+  // que soit son résultat.
   useEffect(() => {
+    const digits = siret.replace(/\D/g, '')
     if (digits.length !== 14) {
       setSiretStatus('idle')
       setRegistry(null)
@@ -188,9 +192,6 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
         if (data.found) {
           setRegistry(data)
           setSiretStatus('found')
-          // Pré-remplissage de la taille de flotte depuis le registre
-          const bucket = fleetBucketFromProxy(data.proxy_flotte)
-          if (bucket) setAnswers((prev) => ({ ...prev, taille_flotte: bucket }))
         } else {
           setRegistry(null)
           setSiretStatus(data.reason === 'registry_unavailable' ? 'unavailable' : 'not_found')
@@ -203,7 +204,25 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
     return () => {
       cancelled = true
     }
-  }, [digits])
+  }, [siret])
+
+  /** Fin du socle : on n'affiche que les branches que le profil justifie. */
+  function terminerQuestions(finales: Answers) {
+    const applicables = branchesApplicables(finales)
+    setBranches(applicables)
+    if (applicables.length > 0) {
+      setBranchStep(0)
+      setPhase('branches')
+      return
+    }
+    setLecture(construireLecture(finales))
+    setPhase('lecture')
+  }
+
+  function terminerBranches(finales: Answers) {
+    setLecture(construireLecture(finales))
+    setPhase('lecture')
+  }
 
   function answer(id: string, value: string, multiple?: boolean) {
     if (multiple) {
@@ -216,19 +235,44 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
       })
       return
     }
-    setAnswers((prev) => ({ ...prev, [id]: value }))
+
+    const next = { ...answers, [id]: value }
+    setAnswers(next)
+
+    if (phase === 'branches') {
+      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
+      else terminerBranches(next)
+      return
+    }
+
     if (step < TOTAL_Q - 1) setStep(step + 1)
-    else setPhase('contact')
+    else terminerQuestions(next)
   }
 
   function goBack() {
-    if (phase === 'contact') {
-      setPhase('questions')
-      setStep(TOTAL_Q - 1)
+    if (phase === 'compte') {
+      setPhase('lecture')
+      return
+    }
+    if (phase === 'lecture') {
+      if (branches.length > 0) {
+        setBranchStep(branches.length - 1)
+        setPhase('branches')
+      } else {
+        setStep(TOTAL_Q - 1)
+        setPhase('questions')
+      }
+      return
+    }
+    if (phase === 'branches') {
+      if (branchStep === 0) {
+        setStep(TOTAL_Q - 1)
+        setPhase('questions')
+      } else setBranchStep(branchStep - 1)
       return
     }
     if (phase === 'questions') {
-      if (step === 0) setPhase('siret')
+      if (step === 0) setPhase('contrat')
       else setStep(step - 1)
     }
   }
@@ -240,24 +284,28 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
 
     const zones = Array.isArray(answers.zones_livraison) ? (answers.zones_livraison as string[]) : []
     const roleLabel = typeof answers.role_transport === 'string' ? answers.role_transport : ''
+    const siretDigits = siret.replace(/\D/g, '')
 
     try {
       const res = await fetch('/api/qualify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Le SIRET ne part qu'ici, et seulement s'il a été saisi : jusqu'à cet
+        // écran, la session est anonyme (décision B3). À l'account gate, le
+        // transporteur donne son identité — le transmettre a alors un sens.
         body: JSON.stringify({
-          siret: digits || null,
-          siret_non_verifie: siretStatus !== 'found',
-          raison_sociale: registry?.raison_sociale ?? '',
           email,
           prenom,
           telephone,
+          siret: siretDigits || null,
+          siret_non_verifie: siretDigits ? siretStatus !== 'found' : null,
           q_type_marchandise: answers.type_marchandise ?? '',
           q_zones_livraison: zones,
           q_nb_vehicules_declare: parseFleetSize(answers.taille_flotte as string | undefined),
           q_role_transport: ROLE_TRANSPORT_CODES[roleLabel] ?? '',
           q_besoin_principal: answers.besoin_principal ?? '',
           q_urgence: answers.urgence ?? '',
+          q_suivi_sous_traitants: answers.suivi_sous_traitants ?? '',
         }),
       })
       const json = (await res.json()) as QualifyResult
@@ -273,25 +321,57 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
 
   if (!open) return null
 
-  const q = FUNNEL_QUESTIONS[step]
+  const q: FunnelQuestion | undefined =
+    phase === 'branches' ? branches[branchStep] : FUNNEL_QUESTIONS[step]
   const currentValue = q ? answers[q.id] : undefined
   const multiSelection = Array.isArray(currentValue) ? currentValue : []
 
+  /*
+   * Le compteur distingue le socle des branches (audit, P0.4). Une branche
+   * n'est jamais annoncée comme « question 7 sur 6 » : elle se présente pour
+   * ce qu'elle est, une question posée parce que le profil la justifie.
+   */
   const headerLabel =
-    phase === 'siret'
-      ? 'Votre entreprise'
+    phase === 'contrat'
+      ? 'Avant de commencer'
       : phase === 'questions'
         ? `Question ${step + 1} sur ${TOTAL_Q}`
-        : phase === 'contact'
-          ? 'Dernière étape'
-          : 'Votre prochain pas'
+        : phase === 'branches'
+          ? branches.length > 1
+            ? `Question complémentaire ${branchStep + 1} sur ${branches.length}`
+            : 'Question complémentaire'
+          : phase === 'lecture'
+            ? 'Votre première lecture'
+            : phase === 'compte'
+              ? 'Ouvrir votre espace'
+              : 'Votre prochain pas'
 
+  /*
+   * Les conditions de branche ne portent que sur des réponses déjà données
+   * (Q1 et Q5) : la barre peut donc savoir, pendant le socle, si une question
+   * complémentaire suivra. Elle réserve alors les dix derniers pour cent —
+   * sans quoi elle atteindrait 100 % avant la dernière question posée.
+   */
+  const branchesPrevues = phase === 'questions' ? branchesApplicables(answers) : branches
+  const finSocle = branchesPrevues.length > 0 ? 90 : 100
   const progress =
-    phase === 'siret' ? 0 : phase === 'questions' ? ((step + 1) / (TOTAL_Q + 1)) * 100 : 100
+    phase === 'contrat'
+      ? 0
+      : phase === 'questions'
+        ? ((step + 1) / TOTAL_Q) * finSocle
+        : phase === 'branches'
+          ? finSocle + ((branchStep + 1) / branches.length) * 10
+          : 100
+
+  const peutRevenir =
+    phase === 'questions' || phase === 'branches' || phase === 'lecture' || phase === 'compte'
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center"
+      // Au-dessus de la bannière cookies (z-9999) : elle s'affiche 1,5 s après
+      // le chargement et atterrissait sinon sur le bouton principal d'une
+      // modale déjà ouverte. Elle reste accessible une fois le parcours fermé.
+      className="fixed inset-0 z-[10000] flex items-end justify-center sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label="Pré-qualification ClearGo"
@@ -316,10 +396,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
             onClick={goBack}
             aria-label="Revenir à l'étape précédente"
             className="rounded-lg p-2"
-            style={{
-              visibility: phase === 'questions' || phase === 'contact' ? 'visible' : 'hidden',
-              color: 'var(--t4)',
-            }}
+            style={{ visibility: peutRevenir ? 'visible' : 'hidden', color: 'var(--t4)' }}
           >
             <IconBack />
           </button>
@@ -347,177 +424,19 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
 
         <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-6">
 
-          {/* ═══ Étape 0 — SIRET ═══════════════════════════════════════════ */}
-          {phase === 'siret' && (
-            <div>
-              <h3 className="mb-2 text-[22px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
-                Votre numéro SIRET
-              </h3>
-              <p className="mb-5 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-                Nous vérifions votre inscription au registre national des transporteurs.
-              </p>
-
-              <label htmlFor="siret" className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
-                SIRET
-                {siretStatus === 'loading' && <span style={{ color: 'var(--green)' }}><Spinner /></span>}
-              </label>
-              <input
-                id="siret"
-                inputMode="numeric"
-                autoComplete="off"
-                value={siret}
-                onChange={(e) => setSiret(formatSiret(e.target.value))}
-                placeholder="424 644 201 00032"
-                className="num w-full rounded-xl border-2 px-4 py-3.5 text-[16px] font-medium outline-none"
-                style={{
-                  borderColor:
-                    siretStatus === 'found'
-                      ? 'var(--green)'
-                      : siretStatus === 'not_found'
-                        ? 'var(--reglo-orange)'
-                        : 'var(--line)',
-                  background: siretStatus === 'found' ? 'var(--green-pale)' : 'var(--surface)',
-                  color: 'var(--cleargo-navy)',
-                }}
-                autoFocus
-              />
-              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--t4)' }}>
-                14 chiffres
-                {digits.length === 14 && !isLuhnValid(digits) && (
-                  <span style={{ color: 'var(--reglo-orange)' }}> · ce numéro semble comporter une erreur de saisie</span>
-                )}
-              </p>
-
-              {/* Cas 1 & 2 — trouvé */}
-              {siretStatus === 'found' && registry && (
-                <div className="mt-5">
-                  <div
-                    className="rounded-xl border p-4"
-                    style={{ borderColor: 'rgba(39,174,96,0.35)', background: 'var(--green-pale)' }}
-                  >
-                    <p className="mb-2 flex items-center gap-2 text-[12px] font-bold" style={{ color: 'var(--green-text)' }}>
-                      <IconCheck />
-                      Nous avons trouvé votre entreprise
-                    </p>
-                    <p className="text-[15px] font-black" style={{ color: 'var(--cleargo-navy)' }}>
-                      {registry.raison_sociale}
-                    </p>
-                    <div className="mt-2 flex flex-col gap-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
-                      {registry.gestionnaire_transport && (
-                        <span>Gestionnaire : {registry.gestionnaire_transport}</span>
-                      )}
-                      {registry.commune && (
-                        <span>
-                          {registry.commune}
-                          {registry.departement ? ` (${registry.departement})` : ''}
-                        </span>
-                      )}
-                      {registry.fin_validite_lti && (
-                        <span>Licence de transport valide jusqu’au {registry.fin_validite_lti}</span>
-                      )}
-                      {registry.proxy_flotte != null && (
-                        <span>
-                          <span className="num">{registry.proxy_flotte}</span> copies conformes déclarées
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cas 2 — licence proche de l'expiration. Ton factuel, pas alarmiste. */}
-                  {licenceUrgente && (
-                    <div
-                      className="mt-3 flex gap-3 rounded-xl border p-4"
-                      style={{ borderColor: 'rgba(249,115,22,0.4)', background: 'rgba(249,115,22,0.07)' }}
-                    >
-                      <ClearGoIcon name="expiration" size={22} className="mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[13px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
-                          Votre licence de transport expire dans{' '}
-                          <span className="num">{joursAvantExpiration}</span> jours.
-                        </p>
-                        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
-                          Le renouvellement se fait auprès de la DREAL. Si ce n’est pas encore
-                          engagé, c’est la priorité absolue.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSiret('')
-                        setRegistry(null)
-                        setSiretStatus('idle')
-                      }}
-                      className="rounded-xl border px-4 py-3 text-[13px] font-semibold sm:flex-1"
-                      style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
-                    >
-                      Ce n’est pas mon entreprise
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhase('questions')}
-                      className="btn-press rounded-xl px-5 py-3 text-[14px] font-bold text-white sm:flex-1"
-                      style={{ background: 'var(--green-cta)' }}
-                    >
-                      Continuer →
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Cas 3 — non trouvé. On n'accuse pas, on ne bloque pas. */}
-              {(siretStatus === 'not_found' || siretStatus === 'unavailable') && (
-                <div className="mt-5">
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--line)', background: 'var(--surface)' }}>
-                    <p className="text-[13.5px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
-                      {siretStatus === 'not_found'
-                        ? 'Ce SIRET n’apparaît pas au registre national des transporteurs.'
-                        : 'La vérification au registre est momentanément indisponible.'}
-                    </p>
-                    {siretStatus === 'not_found' && (
-                      <ul className="mt-2 flex flex-col gap-1 text-[12.5px]" style={{ color: 'var(--t3)' }}>
-                        <li>· Une erreur de saisie</li>
-                        <li>· Votre inscription est très récente et pas encore publiée</li>
-                        <li>· Votre activité ne relève pas du transport routier de marchandises</li>
-                      </ul>
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSiret('')
-                        setSiretStatus('idle')
-                      }}
-                      className="rounded-xl border px-4 py-3 text-[13px] font-semibold sm:flex-1"
-                      style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
-                    >
-                      Corriger le SIRET
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhase('questions')}
-                      className="btn-press rounded-xl px-5 py-3 text-[14px] font-bold text-white sm:flex-1"
-                      style={{ background: 'var(--cleargo-navy)' }}
-                    >
-                      Continuer quand même →
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <p className="mt-5 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
-                Gratuit · Sans engagement · Réservé aux transporteurs routiers
-              </p>
-            </div>
-          )}
+          {/* ═══ Contrat d'entrée ══════════════════════════════════════════ */}
+          {phase === 'contrat' && <ContratEntree onStart={() => setPhase('questions')} onClose={onClose} />}
 
           {/* ═══ Questions ═════════════════════════════════════════════════ */}
-          {phase === 'questions' && q && (
+          {(phase === 'questions' || phase === 'branches') && q && (
             <div key={q.id} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
+              {/* Dire pourquoi la question apparaît : elle n'est pas posée à tout le monde. */}
+              {phase === 'branches' && (
+                <p className="mb-2 text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
+                  Vous nous avez dit travailler avec des partenaires — cette question nous permet
+                  d’être précis sur ce point.
+                </p>
+              )}
               <h3 className="mb-1 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
                 {q.label}
               </h3>
@@ -530,6 +449,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
               <div className={`flex flex-col gap-2.5 ${q.multiple ? '' : 'mt-4'}`}>
                 {q.options.map((opt) => {
                   const selected = q.multiple ? multiSelection.includes(opt) : currentValue === opt
+                  const estRetrait = opt === q.optOut
                   return (
                     <button
                       key={opt}
@@ -539,7 +459,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                       style={{
                         borderColor: selected ? 'var(--green)' : 'var(--line)',
                         background: selected ? 'var(--green-pale)' : 'var(--surface)',
-                        color: selected ? 'var(--cleargo-navy)' : 'var(--t3)',
+                        color: selected ? 'var(--cleargo-navy)' : estRetrait ? 'var(--t4)' : 'var(--t3)',
                       }}
                     >
                       <span className="flex items-center gap-3.5">
@@ -560,19 +480,17 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                 })}
               </div>
 
-              {/* Valeur pré-remplie depuis le registre */}
-              {q.prefillHint && registry?.proxy_flotte != null && (
-                <p className="mt-3 text-[12px]" style={{ color: 'var(--t4)' }}>
-                  {q.prefillHint} Registre : <span className="num">{registry.proxy_flotte}</span> copies
-                  conformes déclarées.
-                </p>
-              )}
-
               {q.multiple && (
                 <button
                   type="button"
                   disabled={multiSelection.length === 0}
-                  onClick={() => (step < TOTAL_Q - 1 ? setStep(step + 1) : setPhase('contact'))}
+                  onClick={() => {
+                    if (phase === 'branches') {
+                      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
+                      else terminerBranches(answers)
+                    } else if (step < TOTAL_Q - 1) setStep(step + 1)
+                    else terminerQuestions(answers)
+                  }}
                   className="btn-press mt-4 w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
                   style={{ background: 'var(--green-cta)' }}
                 >
@@ -582,14 +500,23 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
             </div>
           )}
 
-          {/* ═══ Contact ═══════════════════════════════════════════════════ */}
-          {phase === 'contact' && (
+          {/* ═══ Première lecture — avant toute coordonnée ═════════════════ */}
+          {phase === 'lecture' && lecture && (
+            <PremiereLectureEcran
+              lecture={lecture}
+              onContinue={() => setPhase('compte')}
+              onClose={onClose}
+            />
+          )}
+
+          {/* ═══ Account gate ══════════════════════════════════════════════ */}
+          {phase === 'compte' && (
             <form onSubmit={submit} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
               <h3 className="mb-2 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
-                Où vous joindre ?
+                Où vous envoyer votre analyse ?
               </h3>
-              <p className="mb-5 text-[14px]" style={{ color: 'var(--t3)' }}>
-                Nous vous ouvrons votre espace et vous proposons la suite adaptée à votre situation.
+              <p className="mb-5 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+                Nous ouvrons votre espace et y déposons le périmètre applicable à votre activité.
               </p>
 
               <div className="flex flex-col gap-3.5">
@@ -637,20 +564,36 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
                 </div>
               </div>
 
+              <SiretFacultatif
+                value={siret}
+                onChange={setSiret}
+                status={siretStatus}
+                registry={registry}
+              />
+
               <button
                 type="submit"
                 disabled={sending}
                 className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white disabled:pointer-events-none disabled:opacity-50"
                 style={{ background: 'var(--green-cta)' }}
               >
-                {sending ? 'Envoi…' : 'Voir ma suite →'}
+                {sending ? 'Envoi…' : 'Ouvrir mon espace →'}
               </button>
               {sendError && (
-                <p className="mt-2 text-center text-[12px]" style={{ color: 'var(--score-insuffisant)' }}>
+                <p className="mt-2 text-center text-[12px]" style={{ color: 'var(--score-insuffisant-text)' }}>
                   L’envoi a échoué. Réessayez dans un instant.
                 </p>
               )}
-              <p className="mt-3 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-2 w-full rounded-xl py-3 text-[13px] font-semibold"
+                style={{ color: 'var(--t4)' }}
+              >
+                Pas maintenant
+              </button>
+              <p className="mt-1 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
                 Vos données restent en France · Sans engagement
               </p>
             </form>
@@ -660,10 +603,7 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
           {phase === 'sortie' && (
             <SortieConditionnelle
               niveau={niveauUrgence}
-              // Le registre peut n'avoir rien renvoyé alors que La Bergerie a
-              // retrouvé le prospect au moment de la qualification : on prend
-              // alors l'échéance qu'elle nous remonte.
-              jours={joursAvantExpiration ?? qualification?.urgence_licence ?? null}
+              jours={joursAvantExpiration}
               result={qualification}
               onClose={onClose}
             />
@@ -672,6 +612,274 @@ export function PrequalFunnel({ open, onClose, initialSiret }: PrequalFunnelProp
 
         <div className="h-1 shrink-0" style={{ background: 'var(--green-cta)' }} />
       </div>
+    </div>
+  )
+}
+
+// ── SIRET facultatif ────────────────────────────────────────────────────────
+
+/**
+ * Le SIRET n'apporte rien au visiteur tant qu'il n'a pas décidé d'ouvrir un
+ * espace : il ne sert qu'à lui épargner une ressaisie à l'étape suivante.
+ * Il est donc replié par défaut, et proposé — pas demandé.
+ */
+function SiretFacultatif({
+  value,
+  onChange,
+  status,
+  registry,
+}: {
+  value: string
+  onChange: (v: string) => void
+  status: SiretStatus
+  registry: RegistryData | null
+}) {
+  const [ouvert, setOuvert] = useState(false)
+
+  if (!ouvert) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOuvert(true)}
+        className="mt-4 flex w-full items-center gap-2.5 rounded-xl border border-dashed px-4 py-3 text-left text-[13px] font-semibold"
+        style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
+      >
+        <span aria-hidden="true" style={{ color: 'var(--green-text)' }}>+</span>
+        J’ai mon SIRET sous la main — gagner du temps à l’étape suivante
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'var(--line)' }}>
+      <label htmlFor="siret" className="mb-1.5 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cleargo-navy)' }}>
+        SIRET
+        <span className="font-semibold normal-case tracking-normal" style={{ color: 'var(--t4)' }}>
+          · facultatif
+        </span>
+        {status === 'loading' && <span style={{ color: 'var(--green)' }}><Spinner /></span>}
+      </label>
+      <input
+        id="siret"
+        inputMode="numeric"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => onChange(formatSiret(e.target.value))}
+        placeholder="424 644 201 00032"
+        className="num w-full rounded-xl border-2 px-4 py-3 text-[16px] font-medium outline-none"
+        style={{
+          borderColor: status === 'found' ? 'var(--green)' : 'var(--line)',
+          background: status === 'found' ? 'var(--green-pale)' : 'var(--surface)',
+          color: 'var(--cleargo-navy)',
+        }}
+        autoFocus
+      />
+
+      {status === 'found' && registry?.raison_sociale && (
+        <p className="mt-2 flex items-start gap-2 text-[13px]" style={{ color: 'var(--green-text)' }}>
+          <span className="mt-0.5 shrink-0"><IconCheck /></span>
+          <span>
+            <span className="font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+              {registry.raison_sociale}
+            </span>
+            {registry.commune ? ` · ${registry.commune}` : ''} — nous préremplirons votre dossier.
+          </span>
+        </p>
+      )}
+
+      {/* Aucun de ces cas ne bloque l'envoi : le SIRET reste facultatif. */}
+      {status === 'not_found' && (
+        <p className="mt-2 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+          Ce numéro n’apparaît pas au registre national des transporteurs. Vous pouvez continuer :
+          nous le vérifierons avec vous.
+        </p>
+      )}
+      {status === 'unavailable' && (
+        <p className="mt-2 text-[12.5px]" style={{ color: 'var(--t3)' }}>
+          La vérification est momentanément indisponible. Votre numéro est conservé, continuez.
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          onChange('')
+          setOuvert(false)
+        }}
+        className="mt-3 text-[12.5px] font-semibold"
+        style={{ color: 'var(--t4)' }}
+      >
+        Finalement, je le donnerai plus tard
+      </button>
+    </div>
+  )
+}
+
+// ── Contrat d'entrée ────────────────────────────────────────────────────────
+
+/**
+ * Ce que le visiteur doit savoir avant la première question : l'effort, le
+ * résultat, et le fait qu'il peut partir. Sans SIRET, sans coordonnées.
+ */
+function ContratEntree({ onStart, onClose }: { onStart: () => void; onClose: () => void }) {
+  const POINTS = [
+    {
+      icone: 'expiration' as const,
+      titre: `${TOTAL_Q} questions sur votre activité`,
+      detail: 'Aucune ne porte sur votre identité ni sur celle de votre entreprise.',
+    },
+    {
+      icone: 'reglo' as const,
+      titre: 'Une première lecture à la fin',
+      detail: 'Ce que vous déclarez, votre priorité, et un premier point à clarifier.',
+    },
+    {
+      icone: 'reglo' as const,
+      titre: 'Vous décidez ensuite',
+      detail: 'Ouvrir votre espace, ou repartir. Personne ne vous rappelle sans que vous le demandiez.',
+    },
+  ]
+
+  return (
+    <div style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
+      <h3 className="mb-2 text-[22px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+        Faisons un premier point sur votre situation.
+      </h3>
+      <p className="mb-6 text-[14.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+        Quelques questions nous permettent de comprendre votre activité et votre priorité. Vous
+        recevrez une première lecture, puis vous choisirez la suite.
+      </p>
+
+      <ul className="flex flex-col gap-3">
+        {POINTS.map((p) => (
+          <li
+            key={p.titre}
+            className="flex gap-3.5 rounded-xl px-4 py-3.5"
+            style={{ background: 'var(--surface)' }}
+          >
+            <span
+              aria-hidden="true"
+              className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: 'var(--green-cta)' }}
+            />
+            <div>
+              <p className="text-[14px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+                {p.titre}
+              </p>
+              <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: 'var(--t3)' }}>
+                {p.detail}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        type="button"
+        onClick={onStart}
+        className="btn-press mt-6 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
+        style={{ background: 'var(--green-cta)' }}
+        autoFocus
+      >
+        Commencer →
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2 w-full rounded-xl py-3 text-[13px] font-semibold"
+        style={{ color: 'var(--t4)' }}
+      >
+        Revenir au site
+      </button>
+
+      <p className="mt-3 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
+        Gratuit · Sans engagement · Réservé aux transporteurs routiers
+      </p>
+    </div>
+  )
+}
+
+// ── Première lecture ────────────────────────────────────────────────────────
+
+/**
+ * La valeur rendue avant toute coordonnée. Trois éléments seulement, et chacun
+ * est rattachable à une réponse : c'est la condition posée par l'audit pour
+ * qu'une restitution ne soit pas une personnalisation de façade.
+ */
+function PremiereLectureEcran({
+  lecture,
+  onContinue,
+  onClose,
+}: {
+  lecture: PremiereLecture
+  onContinue: () => void
+  onClose: () => void
+}) {
+  return (
+    <div style={{ animation: 'fadeUp .35s var(--ease-apple) both' }}>
+      <h3 className="mb-4 text-[21px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
+        Voici ce que nous avons compris.
+      </h3>
+
+      <div className="flex flex-col gap-3">
+        <div className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
+            Votre contexte
+          </p>
+          <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
+            {lecture.miroir}
+          </p>
+        </div>
+
+        <div className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
+            Votre priorité
+          </p>
+          <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
+            Vous cherchez à {lecture.priorite}.
+          </p>
+        </div>
+
+        <div
+          className="rounded-xl border px-4 py-3.5"
+          style={{ borderColor: 'rgba(39,174,96,0.3)', background: 'var(--green-pale)' }}
+        >
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--green-text)' }}>
+            Un premier point à clarifier
+          </p>
+          <p className="mt-1.5 text-[15px] font-bold leading-snug" style={{ color: 'var(--cleargo-navy)' }}>
+            {lecture.attention.titre}
+          </p>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+            {lecture.attention.detail}
+          </p>
+          <p className="mt-2.5 text-[11.5px] italic" style={{ color: 'var(--t4)' }}>
+            {lecture.attention.origine}
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+        Ce n’est pas un diagnostic : c’est ce qui se déduit de vos réponses. L’analyse complète
+        identifie les exigences réellement applicables à votre activité.
+      </p>
+
+      <button
+        type="button"
+        onClick={onContinue}
+        className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
+        style={{ background: 'var(--green-cta)' }}
+      >
+        Voir mon périmètre complet →
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2 w-full rounded-xl py-3 text-[13px] font-semibold"
+        style={{ color: 'var(--t4)' }}
+      >
+        J’en reste là pour aujourd’hui
+      </button>
     </div>
   )
 }
@@ -752,8 +960,6 @@ function SortieConditionnelle({
   const redirectUrl = redirectPath && APP_BASE_URL ? `${APP_BASE_URL}${redirectPath}` : null
   const licenceUrgente = jours !== null && jours < LICENCE_URGENCE_JOURS
 
-  // Première preuve concrète : ClearGo montre qu'il sait de quoi il parle
-  // avant de demander quoi que ce soit de plus.
   if (perimetre) {
     return (
       <div style={{ animation: 'fadeUp .35s var(--ease-apple) both' }}>
@@ -817,11 +1023,6 @@ function SortieConditionnelle({
           </div>
         )}
 
-        <p className="mt-5 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-          Prochaine étape : nous avons besoin de connaître la taille de votre parc pour préparer
-          votre liste de documents.
-        </p>
-
         {redirectUrl ? (
           <a
             href={redirectUrl}
@@ -868,7 +1069,7 @@ function SortieConditionnelle({
           <IconCheck />
         </span>
         <p className="text-[13.5px] font-semibold" style={{ color: 'var(--cleargo-navy)' }}>
-          Votre demande est enregistrée.
+          Votre espace est en cours d’ouverture.
         </p>
       </div>
 
@@ -905,14 +1106,6 @@ function SortieConditionnelle({
               disabledNote="Prochaine date en cours de programmation."
             />
             <ActionButton href={ESPACE_CLEARGO_URL} label="Découvrir mon espace ClearGo" />
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-press w-full rounded-xl border px-5 py-3.5 text-[14px] font-bold"
-              style={{ borderColor: 'var(--line)', color: 'var(--t3)' }}
-            >
-              Être recontacté plus tard
-            </button>
           </>
         )}
 
@@ -929,7 +1122,6 @@ function SortieConditionnelle({
               label="Voir le prochain webinaire"
               disabledNote="Prochaine date en cours de programmation."
             />
-            <ActionButton href={ESPACE_CLEARGO_URL} label="Créer mon espace gratuit" />
           </>
         )}
       </div>
