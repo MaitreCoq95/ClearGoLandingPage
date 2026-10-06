@@ -10,42 +10,31 @@ interface Etape {
   sub: string
 }
 
+/*
+ * Le fonctionnement réel, tel que réécrit dans le SaaS après le test des
+ * personas du 27/09 (lot 6, constants/landing/v0.js → COMMENT). L'ancienne
+ * version en six étapes promettait un tirage d'échantillon (« 15 véhicules sur
+ * 200, pas 200 ») que Yoann a jugé faux au regard du fonctionnement réel :
+ * retirée avec le bloc échantillonnage (B8, décision de Vivien du 27/09).
+ */
 const ETAPES: Etape[] = [
   {
     n: 1,
-    icon: 'upload',
-    title: 'Je renseigne mon profil',
-    sub: 'SIRET, activité, spécialités, zones de livraison.',
+    icon: 'plan-dactions',
+    title: 'Vous répondez à six questions',
+    sub: 'Quatre-vingt-dix secondes pour décrire votre activité. Aucun email demandé pour voir le résultat.',
   },
   {
     n: 2,
-    icon: 'core-acces-profession',
-    title: 'ClearGo définit mon périmètre',
-    sub: 'Les référentiels et les exigences qui s’appliquent réellement à mon activité.',
+    icon: 'upload',
+    title: 'Vous nous transmettez vos documents',
+    sub: 'Nous vous rendons un état des lieux : ce qui s’applique à votre activité, les preuves attendues, ce qui manque.',
   },
   {
     n: 3,
-    icon: 'core-flotte',
-    title: 'Je déclare mon parc',
-    sub: 'Combien de véhicules, de conducteurs, de sites. Pré-rempli depuis le registre national quand c’est possible.',
-  },
-  {
-    n: 4,
-    icon: 'controle-technique',
-    title: 'ClearGo tire l’échantillon',
-    sub: 'Nous sélectionnons les véhicules et conducteurs à contrôler. Vous ne choisissez pas — c’est ce qui rend l’évaluation crédible.',
-  },
-  {
-    n: 5,
-    icon: 'document-valide',
-    title: 'Je dépose les pièces demandées',
-    sub: 'Une liste nominative, pas un formulaire générique. 15 véhicules sur 200, pas 200.',
-  },
-  {
-    n: 6,
-    icon: 'cleargo-score',
-    title: 'Je reçois mon score et mon plan d’actions',
-    sub: 'Mon niveau sur 1000, le détail par domaine, mes priorités.',
+    icon: 'expiration',
+    title: 'Nous vous accompagnons pour le tenir à jour',
+    sub: 'Vos échéances sont suivies, et votre fiche reste lisible pour vos clients.',
   },
 ]
 
@@ -76,7 +65,7 @@ export function Parcours(_props: ParcoursProps = {}) {
         {/* En-tête */}
         <div className="mb-16 max-w-[620px] lg:mb-24">
           <div className="section-eyebrow mb-4" style={enter(0)}>
-            Le parcours
+            Comment ça marche
           </div>
           <h2
             className="font-black tracking-tight"
@@ -88,18 +77,12 @@ export function Parcours(_props: ParcoursProps = {}) {
               ...enter(0.1),
             }}
           >
-            Comment ça se passe
+            Vos documents et six questions, puis un état des lieux tenu à jour.
           </h2>
-          <p
-            className="mt-5 text-[17px] italic leading-relaxed"
-            style={{ color: 'var(--t3)', ...enter(0.2) }}
-          >
-            Six étapes. Vous savez exactement ce qui vous attend.
-          </p>
         </div>
 
-        {/* Workflow — 6 colonnes desktop, 3 tablette, 1 mobile */}
-        <ol className="grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-3 md:gap-y-14 lg:grid-cols-6">
+        {/* Workflow — 3 colonnes dès la tablette, 1 sur mobile */}
+        <ol className="grid grid-cols-1 gap-x-10 gap-y-10 md:grid-cols-3 md:gap-y-14">
           {ETAPES.map((e, i) => {
             const delay = i * STEP_DELAY
             const lineDelay = delay + STEP_DELAY
@@ -221,6 +204,15 @@ export function Parcours(_props: ParcoursProps = {}) {
             )
           })}
         </ol>
+
+        {/* Non-certification : actée au test du 27/09 (Laury croyait obtenir une certification). */}
+        <p
+          className="mt-16 max-w-[620px] text-[15px] font-semibold leading-relaxed"
+          style={{ color: 'var(--t2)', ...enter(0.6) }}
+        >
+          ClearGo ne délivre pas de certification : nous rendons votre conformité lisible et
+          vérifiable.
+        </p>
       </div>
     </section>
   )

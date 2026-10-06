@@ -7,7 +7,6 @@ import { KeyFigure } from '@/components/landing/key-figure'
 import { Problems } from '@/components/landing/problems'
 import { Benefits } from '@/components/landing/benefits'
 import { Parcours } from '@/components/landing/parcours'
-import { Echantillonnage } from '@/components/landing/echantillonnage'
 import { SuiviContinu } from '@/components/landing/suivi-continu'
 import { CoutControle } from '@/components/landing/cout-controle'
 import { Maturite } from '@/components/landing/maturite'
@@ -44,7 +43,7 @@ function SecondNiveau() {
           Comment ClearGo travaille, en détail
         </h2>
         <p className="mt-4 max-w-[540px] text-[16px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-          Les référentiels couverts, la méthode d’échantillonnage, le suivi mensuel. Rien
+          Les référentiels couverts, les univers sectoriels, le suivi mensuel. Rien
           d’indispensable pour commencer — utile si vous voulez comprendre avant de vous lancer.
         </p>
       </div>
@@ -89,7 +88,6 @@ function LandingContent() {
       <SecondNiveau />
       <Referentiels />
       <UniversSectoriels />
-      <Echantillonnage />
       <SuiviContinu />
       <Maturite />
       <CoutControle />
