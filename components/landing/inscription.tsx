@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
+import { FUNNEL_QUESTIONS } from '@/config/funnel-questions'
+import { Reglo } from '@/components/landing/reglo'
 
 const REASSURANCE = [
   'Gratuit et sans engagement',
@@ -11,20 +11,13 @@ const REASSURANCE = [
   'Vous choisissez la suite',
 ]
 
-function formatSiret(raw: string): string {
-  const d = raw.replace(/\D/g, '').slice(0, 14)
-  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 14)].filter(Boolean).join(' ')
-}
-
 interface InscriptionProps {
-  /** Ouvre le parcours de pré-qualification, éventuellement pré-rempli. */
-  onStart: (siret: string) => void
+  /** Ouvre le parcours de pré-qualification. */
+  onStart: () => void
 }
 
 export function Inscription({ onStart }: InscriptionProps) {
   const { ref, visible } = useReveal()
-  const [siret, setSiret] = useState('')
-  const digits = siret.replace(/\D/g, '')
 
   const enter = (delay: number) => ({
     opacity: visible ? 1 : 0,
@@ -77,67 +70,55 @@ export function Inscription({ onStart }: InscriptionProps) {
             </ul>
 
             <div className="mt-8 flex items-center gap-3" style={enter(0.4)}>
-              <ClearGoIcon name="reglo" size={44} className="shrink-0" />
+              <Reglo pose="pouce" height={76} className="shrink-0" />
               <p className="max-w-[300px] text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
                 Réglo vous accompagne à chaque étape. Aucune question piège, aucun jargon.
               </p>
             </div>
           </div>
 
-          {/* ── Entrée SIRET ────────────────────────────────────────────── */}
+          {/* ── Contrat d'entrée ────────────────────────────────────────── */}
           <div className="cg-card p-7 lg:p-8" style={enter(0.15)}>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--green-text)' }}>
-              Étape 1 sur 7
+              Ce qui vous attend
             </p>
             <h3 className="mt-2 text-[21px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
-              Votre numéro SIRET
+              {FUNNEL_QUESTIONS.length} questions, puis une première lecture
             </h3>
             <p className="mt-2 text-[14px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-              Nous vérifions votre inscription au registre national des transporteurs et
-              pré-remplissons ce qui peut l’être.
+              Aucune ne porte sur votre identité. Vous recevez la lecture avant de laisser
+              la moindre coordonnée.
             </p>
 
-            <form
-              className="mt-6"
-              onSubmit={(e) => {
-                e.preventDefault()
-                onStart(digits)
-              }}
-            >
-              <label
-                htmlFor="siret-inscription"
-                className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider"
-                style={{ color: 'var(--cleargo-navy)' }}
-              >
-                SIRET
-              </label>
-              <input
-                id="siret-inscription"
-                inputMode="numeric"
-                autoComplete="off"
-                value={siret}
-                onChange={(e) => setSiret(formatSiret(e.target.value))}
-                placeholder="424 644 201 00032"
-                className="num w-full rounded-xl border-2 px-4 py-3.5 text-[16px] outline-none"
-                style={{
-                  borderColor: digits.length === 14 ? 'var(--green)' : 'var(--line)',
-                  background: 'var(--surface)',
-                  color: 'var(--cleargo-navy)',
-                }}
-              />
-              <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--t4)' }}>
-                14 chiffres. Vous pouvez aussi continuer sans le renseigner.
-              </p>
+            <ul className="mt-6 flex flex-col gap-3.5">
+              {[
+                ['Ce que vous transportez, où, et avec quels moyens', 'Les questions posées'],
+                ['Ce que nous avons compris, un point que vous ne saviez peut-être pas, ce qu’il reste à vérifier', 'Ce que vous recevez'],
+                ['Ouvrir votre espace, ou repartir', 'Ce que vous décidez ensuite'],
+              ].map(([detail, label]) => (
+                <li key={label} className="flex flex-col gap-0.5">
+                  <span className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
+                    {label}
+                  </span>
+                  <span className="text-[14px] leading-snug" style={{ color: 'var(--t2)' }}>
+                    {detail}
+                  </span>
+                </li>
+              ))}
+            </ul>
 
-              <button
-                type="submit"
-                data-cta
-                className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
-                style={{ background: 'var(--green-cta)', boxShadow: '0 6px 20px -6px rgba(39,174,96,0.45)' }}
-              >
-                {digits.length === 14 ? 'Vérifier mon entreprise →' : 'Commencer l’évaluation →'}
-              </button>
-            </form>
+            <button
+              type="button"
+              data-cta
+              onClick={onStart}
+              className="btn-press mt-7 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
+              style={{ background: 'var(--green-cta)', boxShadow: '0 6px 20px -6px rgba(39,174,96,0.45)' }}
+            >
+              Évaluer mon profil →
+            </button>
+            <p className="mt-2.5 text-center text-[11.5px]" style={{ color: 'var(--t4)' }}>
+              Sans SIRET · Sans compte · Vous pouvez arrêter à tout moment
+            </p>
           </div>
         </div>
       </div>

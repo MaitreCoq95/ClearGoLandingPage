@@ -14,6 +14,13 @@ import { bergerieHeaders, clientIp } from '@/lib/bergerie'
 
 const BERGERIE_API_URL = process.env.BERGERIE_API_URL
 
+/**
+ * TODO(session-saas): chemin à confirmer sur la branche du CRM. Piloté par
+ * variable d'environnement pour être corrigeable sans redéploiement.
+ */
+const VERIFY_PATH =
+  process.env.BERGERIE_VERIFY_PATH || '/api/crm/landing/verify-siret/'
+
 /** Champs publics du registre — rien d'autre ne sort d'ici. */
 const PUBLIC_FIELDS = [
   'raison_sociale',
@@ -71,9 +78,11 @@ export async function GET(
     return NextResponse.json({ found: false, reason: 'registry_unavailable' })
   }
 
+  const url = `${BERGERIE_API_URL.replace(/\/$/, '')}${VERIFY_PATH}${siret}/`
+
   try {
     const upstream = await fetch(
-      `${BERGERIE_API_URL.replace(/\/$/, '')}/api/bergerie/landing/verify-siret/${siret}/`,
+      url,
       {
         headers: bergerieHeaders(req),
         signal: AbortSignal.timeout(6000),
@@ -85,6 +94,11 @@ export async function GET(
       return NextResponse.json({ found: false, reason: 'not_in_registry' })
     }
     if (!upstream.ok) {
+      // Sans ce log, un chemin d'API erroné se lit comme « SIRET inconnu ».
+      console.error(
+        `[ClearGo][ALERTE] Registre injoignable — HTTP ${upstream.status} sur ${url}. ` +
+          'Le visiteur voit « vérification indisponible » et passe outre.',
+      )
       return NextResponse.json({ found: false, reason: 'registry_unavailable' })
     }
 
@@ -104,7 +118,11 @@ export async function GET(
     }
 
     return NextResponse.json(safe)
-  } catch {
+  } catch (err) {
+    console.error(
+      `[ClearGo][ALERTE] Registre injoignable — ${url} : ` +
+        `${err instanceof Error ? err.message : 'erreur inconnue'}.`,
+    )
     return NextResponse.json({ found: false, reason: 'registry_unavailable' })
   }
 }

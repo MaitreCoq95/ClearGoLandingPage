@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { CONTACT_EMAIL, ESPACE_CLEARGO_URL } from '@/config/site-links'
+import { Reglo } from '@/components/landing/reglo'
 
 const NAV = [
   { href: '/comment-ca-marche', label: 'Comment ça marche' },
@@ -24,8 +24,21 @@ export function Footer() {
 
           {/* Marque */}
           <div>
-            <div className="h-11 w-[180px] overflow-hidden rounded-lg">
-              <video autoPlay loop muted playsInline className="h-full w-full object-cover" aria-hidden="true">
+            {/*
+              Même repli que dans la navbar. La plaque blanche est indispensable
+              ici : le logotype est bleu marine et vert, invisible sur le navy.
+              La vidéo étant opaque et en object-cover, elle la recouvre
+              entièrement tant qu'elle se charge — la plaque ne se voit que si
+              le blob tombe.
+            */}
+            <div className="relative h-11 w-[180px] overflow-hidden rounded-lg bg-white">
+              <img
+                src="/images/cleargo-logo.png"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-contain p-1"
+              />
+              <video autoPlay loop muted playsInline className="relative h-full w-full object-cover" aria-hidden="true">
                 <source
                   src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/VideoHeroLogo-ric3FQikb28mJ4nhqJHFkPpijnJAaG.mp4"
                   type="video/mp4"
@@ -33,7 +46,7 @@ export function Footer() {
               </video>
             </div>
             <div className="mt-4 flex items-center gap-2.5">
-              <ClearGoIcon name="reglo" size={28} className="shrink-0" />
+              <Reglo pose="gilet-pointe" height={48} className="shrink-0" />
               <p className="text-[12.5px] text-white/45">
                 L’évaluation de conformité des transporteurs routiers.
               </p>
@@ -86,7 +99,24 @@ export function Footer() {
         <div className="mt-10 h-px" style={{ background: 'rgba(255,255,255,0.09)' }} />
 
         <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-[12px] text-white/30">© 2026 LittleFlock SAS</p>
+          {/*
+            Le logotype LittleFlock est bleu et gris anthracite : sur le navy du
+            pied de page il disparaîtrait. Il est donc posé sur une plaque
+            claire — traitement habituel d'un logo d'éditeur sur fond sombre.
+          */}
+          {/* TODO: lier vers le site LittleFlock quand son URL sera arrêtée. */}
+          <div className="flex items-center gap-3.5">
+            <span className="rounded-md bg-white px-2.5 py-1.5">
+              <img
+                src="/images/littleflock-logo.png"
+                alt="LittleFlock"
+                width={112}
+                height={33}
+                className="h-[22px] w-auto"
+              />
+            </span>
+            <p className="text-[12px] text-white/30">Éditeur du site · © 2026 LittleFlock SAS</p>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {LEGAL.map((link) => (
               <Link
