@@ -103,7 +103,11 @@ export function CoutControle() {
           {SANCTIONS.map((s, i) => (
             <li
               key={s.libelle}
-              className="flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+              // Deux colonnes qui reviennent à la ligne : les libellés sourcés
+              // (art. et classe de contravention) sont des phrases, pas des
+              // montants courts. En `shrink-0` ils débordaient de 770 px à
+              // 1440 px de large et la page défilait de côté.
+              className="flex flex-col gap-1.5 py-5 sm:grid sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)] sm:items-baseline sm:gap-10"
               style={{
                 borderTop: i === 0 ? '1px solid rgba(255,255,255,0.1)' : undefined,
                 borderBottom: '1px solid rgba(255,255,255,0.1)',
@@ -117,8 +121,8 @@ export function CoutControle() {
                 {s.libelle}
               </span>
               <span
-                className="num shrink-0 font-bold text-white sm:text-right"
-                style={{ fontSize: 'clamp(17px, 2.2vw, 22px)', letterSpacing: '-0.8px' }}
+                className="min-w-0 break-words font-bold leading-snug text-white"
+                style={{ fontSize: 'clamp(15px, 1.5vw, 17px)' }}
               >
                 {s.montant}
               </span>
