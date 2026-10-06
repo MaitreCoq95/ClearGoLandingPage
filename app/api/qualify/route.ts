@@ -171,12 +171,16 @@ export async function POST(req: Request) {
     siret_non_verifie: siret.length === 14 ? body.siret_non_verifie === true : null,
     q_type_marchandise: body.q_type_marchandise ?? '',
     q_zones_livraison: zones,
-    q_has_international: zones.includes('International'),
+    // Identifiants de zones du SaaS (ZONES_INTERNATIONALES) : le libellé
+    // « International » n'existe plus.
+    q_has_international:
+      typeof body.q_has_international === 'boolean'
+        ? body.q_has_international
+        : zones.some((z) => ['frontalier', 'europe', 'hors_europe', 'international'].includes(z)),
     q_nb_vehicules_declare: body.q_nb_vehicules_declare ?? null,
     q_role_transport: body.q_role_transport ?? '',
     q_besoin_principal: body.q_besoin_principal ?? '',
     q_urgence: body.q_urgence ?? '',
-    q_suivi_sous_traitants: body.q_suivi_sous_traitants ?? '',
     source: 'landing',
   }
 

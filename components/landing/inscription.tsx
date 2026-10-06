@@ -93,7 +93,7 @@ export function Inscription({ onStart }: InscriptionProps) {
             <ul className="mt-6 flex flex-col gap-3.5">
               {[
                 ['Ce que vous transportez, où, et avec quels moyens', 'Les questions posées'],
-                ['Votre contexte, votre priorité, un premier point à clarifier', 'Ce que vous recevez'],
+                ['Ce que nous avons compris, un point que vous ne saviez peut-être pas, ce qu’il reste à vérifier', 'Ce que vous recevez'],
                 ['Ouvrir votre espace, ou repartir', 'Ce que vous décidez ensuite'],
               ].map(([detail, label]) => (
                 <li key={label} className="flex flex-col gap-0.5">

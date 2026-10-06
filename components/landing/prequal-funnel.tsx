@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { ClearGoIcon } from '@/components/icons/cleargo-icon'
+import { Reglo } from '@/components/landing/reglo'
 import {
   FUNNEL_QUESTIONS,
   LICENCE_URGENCE_JOURS,
   ROLE_TRANSPORT_CODES,
-  branchesApplicables,
-  mapUrgence,
+  ZONES_INTERNATIONALES,
+  liste,
+  niveauUrgence as calculerNiveauUrgence,
   parseFleetSize,
+  texte,
   type Answers,
-  type FunnelBranch,
-  type FunnelQuestion,
 } from '@/config/funnel-questions'
-import { construireLecture, type PremiereLecture } from '@/config/premiere-lecture'
+import { construireRestitution, type Restitution } from '@/config/restitution'
+import { TITRES_BLOCS } from '@/config/restitution-textes'
 import {
   APP_BASE_URL,
   CALENDLY_URL,
@@ -35,10 +37,11 @@ import {
  *   arbitrage B3 du 12/09, l'identité arrive à l'account gate).
  * - Aucun écran n'est une impasse (audit §6.3). Chaque phase offre une sortie.
  *
- * Le SIRET a quitté ce parcours. Il ne demandait rien d'utile au visiteur à ce
- * stade et bloquait l'entrée : tant qu'il n'était pas saisi, aucun bouton de
- * continuation n'était rendu. Sa réintroduction facultative à l'account gate
- * est en attente d'arbitrage ; le proxy de vérification reste en place.
+ * Les six questions et les textes de restitution sont ceux du SaaS, validés
+ * par Vivien le 25/09/2026 (voir config/restitution-textes.ts). Aucune
+ * question complémentaire : « tunnel arrêté après 6 questions » (25/09).
+ *
+ * Le SIRET est facultatif et n'arrive qu'à l'account gate.
  */
 
 // ── Chrome SVG (aucune librairie d'icônes externe) ──────────────────────────
@@ -74,7 +77,7 @@ interface QualifyResult {
   perimetre: { referentiels: string[]; nb_domaines: number } | null
 }
 
-type Phase = 'contrat' | 'questions' | 'branches' | 'lecture' | 'compte' | 'sortie'
+type Phase = 'contrat' | 'questions' | 'lecture' | 'compte' | 'sortie'
 
 /** Données publiques du registre — le proxy n'en laisse pas sortir d'autres. */
 interface RegistryData {
@@ -104,11 +107,9 @@ const TOTAL_Q = FUNNEL_QUESTIONS.length
 export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const [phase, setPhase] = useState<Phase>('contrat')
   const [step, setStep] = useState(0)
-  const [branchStep, setBranchStep] = useState(0)
-  const [branches, setBranches] = useState<FunnelBranch[]>([])
 
   const [answers, setAnswers] = useState<Answers>({})
-  const [lecture, setLecture] = useState<PremiereLecture | null>(null)
+  const [lecture, setLecture] = useState<Restitution | null>(null)
 
   // SIRET : facultatif, et seulement à l'account gate. Il ne sert qu'à éviter
   // une ressaisie au transporteur qui l'a sous la main.
@@ -123,17 +124,14 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
   const [sendError, setSendError] = useState(false)
   const [qualification, setQualification] = useState<QualifyResult | null>(null)
 
-  const urgenceDeclaree = typeof answers.urgence === 'string' ? answers.urgence : undefined
   const joursAvantExpiration = qualification?.urgence_licence ?? null
   const licenceUrgente =
     joursAvantExpiration !== null && joursAvantExpiration < LICENCE_URGENCE_JOURS
-  const niveauUrgence = licenceUrgente ? 'urgent_chaud' : mapUrgence(urgenceDeclaree)
+  const niveauUrgence = licenceUrgente ? 'urgent_chaud' : calculerNiveauUrgence(answers)
 
   const reset = useCallback(() => {
     setPhase('contrat')
     setStep(0)
-    setBranchStep(0)
-    setBranches([])
     setAnswers({})
     setLecture(null)
     setSiret('')
@@ -206,21 +204,9 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     }
   }, [siret])
 
-  /** Fin du socle : on n'affiche que les branches que le profil justifie. */
+  /** Fin des six questions : la restitution est calculée ici, rien n'est envoyé. */
   function terminerQuestions(finales: Answers) {
-    const applicables = branchesApplicables(finales)
-    setBranches(applicables)
-    if (applicables.length > 0) {
-      setBranchStep(0)
-      setPhase('branches')
-      return
-    }
-    setLecture(construireLecture(finales))
-    setPhase('lecture')
-  }
-
-  function terminerBranches(finales: Answers) {
-    setLecture(construireLecture(finales))
+    setLecture(construireRestitution(finales))
     setPhase('lecture')
   }
 
@@ -238,13 +224,6 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
     const next = { ...answers, [id]: value }
     setAnswers(next)
-
-    if (phase === 'branches') {
-      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
-      else terminerBranches(next)
-      return
-    }
-
     if (step < TOTAL_Q - 1) setStep(step + 1)
     else terminerQuestions(next)
   }
@@ -255,20 +234,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
       return
     }
     if (phase === 'lecture') {
-      if (branches.length > 0) {
-        setBranchStep(branches.length - 1)
-        setPhase('branches')
-      } else {
-        setStep(TOTAL_Q - 1)
-        setPhase('questions')
-      }
-      return
-    }
-    if (phase === 'branches') {
-      if (branchStep === 0) {
-        setStep(TOTAL_Q - 1)
-        setPhase('questions')
-      } else setBranchStep(branchStep - 1)
+      setStep(TOTAL_Q - 1)
+      setPhase('questions')
       return
     }
     if (phase === 'questions') {
@@ -282,8 +249,7 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
     setSending(true)
     setSendError(false)
 
-    const zones = Array.isArray(answers.zones_livraison) ? (answers.zones_livraison as string[]) : []
-    const roleLabel = typeof answers.role_transport === 'string' ? answers.role_transport : ''
+    const zones = liste(answers, 'zones')
     const siretDigits = siret.replace(/\D/g, '')
 
     try {
@@ -299,13 +265,15 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           telephone,
           siret: siretDigits || null,
           siret_non_verifie: siretDigits ? siretStatus !== 'found' : null,
-          q_type_marchandise: answers.type_marchandise ?? '',
+          // Identifiants du SaaS. `q_type_marchandise` est un CharField(100) côté
+          // CRM : les marchandises (multi) y partent jointes par des virgules.
+          q_type_marchandise: liste(answers, 'marchandises').join(',').slice(0, 100),
           q_zones_livraison: zones,
-          q_nb_vehicules_declare: parseFleetSize(answers.taille_flotte as string | undefined),
-          q_role_transport: ROLE_TRANSPORT_CODES[roleLabel] ?? '',
-          q_besoin_principal: answers.besoin_principal ?? '',
-          q_urgence: answers.urgence ?? '',
-          q_suivi_sous_traitants: answers.suivi_sous_traitants ?? '',
+          q_has_international: zones.some((z) => ZONES_INTERNATIONALES.includes(z)),
+          q_nb_vehicules_declare: parseFleetSize(texte(answers, 'flotte')),
+          q_role_transport: ROLE_TRANSPORT_CODES[texte(answers, 'role') ?? ''] ?? '',
+          q_besoin_principal: texte(answers, 'besoin') ?? '',
+          q_urgence: calculerNiveauUrgence(answers),
         }),
       })
       const json = (await res.json()) as QualifyResult
@@ -321,50 +289,27 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
   if (!open) return null
 
-  const q: FunnelQuestion | undefined =
-    phase === 'branches' ? branches[branchStep] : FUNNEL_QUESTIONS[step]
+  const q = FUNNEL_QUESTIONS[step]
   const currentValue = q ? answers[q.id] : undefined
   const multiSelection = Array.isArray(currentValue) ? currentValue : []
 
-  /*
-   * Le compteur distingue le socle des branches (audit, P0.4). Une branche
-   * n'est jamais annoncée comme « question 7 sur 6 » : elle se présente pour
-   * ce qu'elle est, une question posée parce que le profil la justifie.
-   */
   const headerLabel =
     phase === 'contrat'
       ? 'Avant de commencer'
       : phase === 'questions'
         ? `Question ${step + 1} sur ${TOTAL_Q}`
-        : phase === 'branches'
-          ? branches.length > 1
-            ? `Question complémentaire ${branchStep + 1} sur ${branches.length}`
-            : 'Question complémentaire'
-          : phase === 'lecture'
-            ? 'Votre première lecture'
-            : phase === 'compte'
-              ? 'Ouvrir votre espace'
-              : 'Votre prochain pas'
+        : phase === 'lecture'
+          ? 'Votre résultat'
+          : phase === 'compte'
+            ? 'Ouvrir votre espace'
+            : 'Votre prochain pas'
 
-  /*
-   * Les conditions de branche ne portent que sur des réponses déjà données
-   * (Q1 et Q5) : la barre peut donc savoir, pendant le socle, si une question
-   * complémentaire suivra. Elle réserve alors les dix derniers pour cent —
-   * sans quoi elle atteindrait 100 % avant la dernière question posée.
-   */
-  const branchesPrevues = phase === 'questions' ? branchesApplicables(answers) : branches
-  const finSocle = branchesPrevues.length > 0 ? 90 : 100
+  // Le compteur et la barre décrivent la même chose : six questions, six pas.
   const progress =
-    phase === 'contrat'
-      ? 0
-      : phase === 'questions'
-        ? ((step + 1) / TOTAL_Q) * finSocle
-        : phase === 'branches'
-          ? finSocle + ((branchStep + 1) / branches.length) * 10
-          : 100
+    phase === 'contrat' ? 0 : phase === 'questions' ? ((step + 1) / TOTAL_Q) * 100 : 100
 
   const peutRevenir =
-    phase === 'questions' || phase === 'branches' || phase === 'lecture' || phase === 'compte'
+    phase === 'questions' || phase === 'lecture' || phase === 'compte'
 
   return (
     <div
@@ -428,15 +373,8 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
           {phase === 'contrat' && <ContratEntree onStart={() => setPhase('questions')} onClose={onClose} />}
 
           {/* ═══ Questions ═════════════════════════════════════════════════ */}
-          {(phase === 'questions' || phase === 'branches') && q && (
+          {phase === 'questions' && q && (
             <div key={q.id} style={{ animation: 'fadeUp .3s var(--ease-apple) both' }}>
-              {/* Dire pourquoi la question apparaît : elle n'est pas posée à tout le monde. */}
-              {phase === 'branches' && (
-                <p className="mb-2 text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
-                  Vous nous avez dit travailler avec des partenaires — cette question nous permet
-                  d’être précis sur ce point.
-                </p>
-              )}
               <h3 className="mb-1 text-[20px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
                 {q.label}
               </h3>
@@ -448,18 +386,18 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
 
               <div className={`flex flex-col gap-2.5 ${q.multiple ? '' : 'mt-4'}`}>
                 {q.options.map((opt) => {
-                  const selected = q.multiple ? multiSelection.includes(opt) : currentValue === opt
-                  const estRetrait = opt === q.optOut
+                  const selected = q.multiple ? multiSelection.includes(opt.id) : currentValue === opt.id
                   return (
                     <button
-                      key={opt}
+                      key={opt.id}
                       type="button"
-                      onClick={() => answer(q.id, opt, q.multiple)}
+                      aria-pressed={selected}
+                      onClick={() => answer(q.id, opt.id, q.multiple)}
                       className="btn-press w-full rounded-xl border-2 px-5 py-4 text-left text-[14.5px] font-semibold"
                       style={{
                         borderColor: selected ? 'var(--green)' : 'var(--line)',
                         background: selected ? 'var(--green-pale)' : 'var(--surface)',
-                        color: selected ? 'var(--cleargo-navy)' : estRetrait ? 'var(--t4)' : 'var(--t3)',
+                        color: selected ? 'var(--cleargo-navy)' : 'var(--t3)',
                       }}
                     >
                       <span className="flex items-center gap-3.5">
@@ -473,37 +411,37 @@ export function PrequalFunnel({ open, onClose }: PrequalFunnelProps) {
                         >
                           {selected && <IconCheck />}
                         </span>
-                        {opt}
+                        {opt.label}
                       </span>
                     </button>
                   )
                 })}
               </div>
 
+              {/*
+                Collant en bas : avec neuf tuiles, le bouton sortait de l'écran
+                sur téléphone — constat du test des personas du 27/09.
+              */}
               {q.multiple && (
-                <button
-                  type="button"
-                  disabled={multiSelection.length === 0}
-                  onClick={() => {
-                    if (phase === 'branches') {
-                      if (branchStep < branches.length - 1) setBranchStep(branchStep + 1)
-                      else terminerBranches(answers)
-                    } else if (step < TOTAL_Q - 1) setStep(step + 1)
-                    else terminerQuestions(answers)
-                  }}
-                  className="btn-press mt-4 w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
-                  style={{ background: 'var(--green-cta)' }}
-                >
-                  Continuer →
-                </button>
+                <div className="sticky bottom-0 -mx-5 mt-4 bg-white px-5 pt-3 pb-1 sm:-mx-6 sm:px-6">
+                  <button
+                    type="button"
+                    disabled={multiSelection.length === 0}
+                    onClick={() => (step < TOTAL_Q - 1 ? setStep(step + 1) : terminerQuestions(answers))}
+                    className="btn-press w-full rounded-xl py-3.5 text-[15px] font-bold text-white disabled:pointer-events-none disabled:opacity-40"
+                    style={{ background: 'var(--green-cta)' }}
+                  >
+                    Continuer →
+                  </button>
+                </div>
               )}
             </div>
           )}
 
           {/* ═══ Première lecture — avant toute coordonnée ═════════════════ */}
           {phase === 'lecture' && lecture && (
-            <PremiereLectureEcran
-              lecture={lecture}
+            <RestitutionEcran
+              restitution={lecture}
               onContinue={() => setPhase('compte')}
               onClose={onClose}
             />
@@ -731,7 +669,7 @@ function ContratEntree({ onStart, onClose }: { onStart: () => void; onClose: () 
     {
       icone: 'reglo' as const,
       titre: 'Une première lecture à la fin',
-      detail: 'Ce que vous déclarez, votre priorité, et un premier point à clarifier.',
+      detail: 'Ce que nous avons compris, le point que vous ne saviez peut-être pas, et ce qu’il reste à vérifier.',
     },
     {
       icone: 'reglo' as const,
@@ -746,7 +684,7 @@ function ContratEntree({ onStart, onClose }: { onStart: () => void; onClose: () 
         Faisons un premier point sur votre situation.
       </h3>
       <p className="mb-6 text-[14.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-        Quelques questions nous permettent de comprendre votre activité et votre priorité. Vous
+        Quelques questions nous permettent de comprendre votre activité. Vous
         recevrez une première lecture, puis vous choisirez la suite.
       </p>
 
@@ -799,78 +737,85 @@ function ContratEntree({ onStart, onClose }: { onStart: () => void; onClose: () 
   )
 }
 
-// ── Première lecture ────────────────────────────────────────────────────────
+// ── Restitution en trois blocs ──────────────────────────────────────────────
 
 /**
- * La valeur rendue avant toute coordonnée. Trois éléments seulement, et chacun
- * est rattachable à une réponse : c'est la condition posée par l'audit pour
- * qu'une restitution ne soit pas une personnalisation de façade.
+ * La valeur rendue avant toute coordonnée (décision B5). Aucun texte n'est
+ * rédigé ici : tout vient de config/restitution-textes.ts, copie des textes
+ * validés le 25/09. Réglo porte le bloc 2, comme dans le SaaS.
  */
-function PremiereLectureEcran({
-  lecture,
+function RestitutionEcran({
+  restitution,
   onContinue,
   onClose,
 }: {
-  lecture: PremiereLecture
+  restitution: Restitution
   onContinue: () => void
   onClose: () => void
 }) {
+  const titre = (texteTitre: string) => (
+    <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
+      {texteTitre}
+    </p>
+  )
+
   return (
     <div style={{ animation: 'fadeUp .35s var(--ease-apple) both' }}>
-      <h3 className="mb-4 text-[21px] font-black leading-tight" style={{ color: 'var(--cleargo-navy)' }}>
-        Voici ce que nous avons compris.
-      </h3>
-
       <div className="flex flex-col gap-3">
-        <div className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
-            Votre contexte
-          </p>
-          <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
-            {lecture.miroir}
-          </p>
-        </div>
+        {restitution.bloc1 && (
+          <section className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
+            {titre(TITRES_BLOCS.compris)}
+            <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
+              {restitution.bloc1}
+            </p>
+          </section>
+        )}
 
-        <div className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--t4)' }}>
-            Votre priorité
-          </p>
-          <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
-            Vous cherchez à {lecture.priorite}.
-          </p>
-        </div>
-
-        <div
-          className="rounded-xl border px-4 py-3.5"
+        <section
+          className="rounded-xl border px-4 py-4"
           style={{ borderColor: 'rgba(39,174,96,0.3)', background: 'var(--green-pale)' }}
         >
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--green-text)' }}>
-            Un premier point à clarifier
+          <div className="flex items-start gap-3">
+            <Reglo pose="gilet-pointe" height={64} className="shrink-0" />
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--green-text)' }}>
+                {TITRES_BLOCS.revelation}
+              </p>
+              <p className="mt-1.5 text-[14.5px] font-bold leading-snug" style={{ color: 'var(--cleargo-navy)' }}>
+                {restitution.bloc2.ouverture}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-col gap-2.5">
+            {restitution.bloc2.paragraphes.map((paragraphe) => (
+              <p key={paragraphe.slice(0, 32)} className="text-[13.5px] leading-relaxed" style={{ color: 'var(--t2)' }}>
+                {paragraphe}
+              </p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl px-4 py-3.5" style={{ background: 'var(--surface)' }}>
+          {titre(TITRES_BLOCS.aVerifier)}
+          <p className="mt-1.5 text-[14px] leading-relaxed" style={{ color: 'var(--cleargo-navy)' }}>
+            {restitution.bloc3}
           </p>
-          <p className="mt-1.5 text-[15px] font-bold leading-snug" style={{ color: 'var(--cleargo-navy)' }}>
-            {lecture.attention.titre}
-          </p>
-          <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-            {lecture.attention.detail}
-          </p>
-          <p className="mt-2.5 text-[11.5px] italic" style={{ color: 'var(--t4)' }}>
-            {lecture.attention.origine}
-          </p>
-        </div>
+        </section>
       </div>
 
+      {/* Ligne validée par Vivien le 25/09 (option C), au-dessus du CTA de compte. */}
       <p className="mt-5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
-        Ce n’est pas un diagnostic : c’est ce qui se déduit de vos réponses. L’analyse complète
-        identifie les exigences réellement applicables à votre activité.
+        Rejoignez le réseau ClearGo : les transporteurs qui tiennent leurs preuves à jour, pour
+        leurs clients comme pour leurs contrôles.
       </p>
 
       <button
         type="button"
         onClick={onContinue}
-        className="btn-press mt-5 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
+        className="btn-press mt-4 w-full rounded-xl py-4 text-[15px] font-extrabold text-white"
         style={{ background: 'var(--green-cta)' }}
       >
-        Voir mon périmètre complet →
+        Créer mon compte gratuit →
       </button>
       <button
         type="button"
