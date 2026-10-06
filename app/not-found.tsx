@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
+import { Reglo } from '@/components/landing/reglo'
 
 export const metadata: Metadata = {
   title: 'Page introuvable',
@@ -62,7 +62,7 @@ export default function NotFound() {
         </nav>
 
         <div className="mt-10 flex items-center gap-3">
-          <ClearGoIcon name="reglo" size={34} className="shrink-0" />
+          <Reglo pose="souci" height={72} className="shrink-0" />
           <p className="text-[13px]" style={{ color: 'var(--t4)' }}>
             Un lien cassé quelque part ? Écrivez-nous à{' '}
             <a

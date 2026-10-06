@@ -1,8 +1,8 @@
 'use client'
 
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
 import { FUNNEL_QUESTIONS } from '@/config/funnel-questions'
+import { Reglo } from '@/components/landing/reglo'
 
 const REASSURANCE = [
   'Gratuit et sans engagement',
@@ -70,7 +70,7 @@ export function Inscription({ onStart }: InscriptionProps) {
             </ul>
 
             <div className="mt-8 flex items-center gap-3" style={enter(0.4)}>
-              <ClearGoIcon name="reglo" size={44} className="shrink-0" />
+              <Reglo pose="pouce" height={76} className="shrink-0" />
               <p className="max-w-[300px] text-[12.5px] leading-snug" style={{ color: 'var(--t4)' }}>
                 Réglo vous accompagne à chaque étape. Aucune question piège, aucun jargon.
               </p>

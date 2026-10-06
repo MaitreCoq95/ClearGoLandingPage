@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { useReveal } from '@/hooks/use-reveal'
+import { Reglo } from '@/components/landing/reglo'
 
 /**
  * Anneau ClearGo Score.
@@ -278,7 +278,7 @@ export function Hero({ onCta }: HeroProps) {
                   className="mt-5 flex items-center gap-3 border-t pt-4"
                   style={{ borderColor: 'var(--line-l)' }}
                 >
-                  <ClearGoIcon name="reglo" size={30} className="shrink-0" />
+                  <Reglo pose="pointe" height={48} className="shrink-0" />
                   <p className="text-[11.5px] leading-snug" style={{ color: 'var(--t4)' }}>
                     Exemple de restitution. Votre score dépend du périmètre applicable à votre
                     activité.

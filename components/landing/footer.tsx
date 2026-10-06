@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { ClearGoIcon } from '@/components/icons/cleargo-icon'
 import { CONTACT_EMAIL, ESPACE_CLEARGO_URL } from '@/config/site-links'
+import { Reglo } from '@/components/landing/reglo'
 
 const NAV = [
   { href: '/comment-ca-marche', label: 'Comment ça marche' },
@@ -46,7 +46,7 @@ export function Footer() {
               </video>
             </div>
             <div className="mt-4 flex items-center gap-2.5">
-              <ClearGoIcon name="reglo" size={28} className="shrink-0" />
+              <Reglo pose="gilet-pointe" height={48} className="shrink-0" />
               <p className="text-[12.5px] text-white/45">
                 L’évaluation de conformité des transporteurs routiers.
               </p>

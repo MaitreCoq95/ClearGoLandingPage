@@ -119,22 +119,6 @@ const ICONS = {
     ),
   },
 
-  reglo: {
-    viewBox: '0 0 44 44',
-    body: (
-      <>
-        <ellipse cx="22" cy="18" rx="10" ry="11" stroke={ORANGE} strokeWidth="2" />
-        <circle cx="18" cy="16" r="4" stroke={ORANGE} strokeWidth="1.2" fill="none" />
-        <circle cx="26" cy="16" r="4" stroke={ORANGE} strokeWidth="1.2" fill="none" />
-        <circle cx="18" cy="16" r="1.6" fill={GREEN} />
-        <circle cx="26" cy="16" r="1.6" fill={GREEN} />
-        <path d="M18 22 Q22 25 26 22" stroke={GREEN} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        <path d="M12 29 Q14 24 22 26 Q30 24 32 29 L30 38 L14 38 Z" stroke={ORANGE} strokeWidth="2" fill="none" />
-        <line x1="22" y1="26" x2="22" y2="38" stroke={GREEN} strokeWidth="1.5" />
-      </>
-    ),
-  },
-
   // ── CORE Transport (socle réglementaire) ──────────────────────────────────
 
   'core-acces-profession': {
