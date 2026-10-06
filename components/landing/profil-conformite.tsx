@@ -25,8 +25,9 @@ const CARACTERISTIQUES: {
     icone: 'score-partageable',
   },
   {
-    label: 'Mis à jour en continu',
-    sub: 'Reflète votre score du jour',
+    // « Mis à jour en continu » retiré : vérification continue non démontrable (B9).
+    label: 'Daté à chaque édition',
+    sub: 'Votre niveau à une date donnée',
     icone: 'cleargo-score',
   },
   {
@@ -159,8 +160,7 @@ export function ProfilConformite() {
                     </span>
                   </div>
                   <p className="text-[12px]" style={{ color: 'var(--t4)' }}>
-                    Généré le <span className="num">03/09/2026</span> · Mis à jour en
-                    continu
+                    Exemple fictif · édité le <span className="num">03/09/2026</span>
                   </p>
                 </div>
                 <ClearGoIcon
@@ -183,7 +183,7 @@ export function ProfilConformite() {
                   Transports Dupont &amp; Fils
                 </p>
                 <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--t3)' }}>
-                  SIREN <span className="num">823 456 789</span> · Île-de-France
+                  Île-de-France
                 </p>
               </div>
 
@@ -199,17 +199,8 @@ export function ProfilConformite() {
                   >
                     ClearGo Score
                   </p>
-                  <p
-                    className="num text-[34px] font-bold leading-none"
-                    style={{ color: 'var(--cleargo-navy)', letterSpacing: '-1.5px' }}
-                  >
-                    820
-                    <span
-                      className="text-[13px] font-medium"
-                      style={{ color: 'var(--t4)' }}
-                    >
-                      {' '}/ 1000
-                    </span>
+                  <p className="text-[15px] font-bold" style={{ color: 'var(--cleargo-navy)' }}>
+                    Palier atteint
                   </p>
                 </div>
                 <span
@@ -236,20 +227,14 @@ export function ProfilConformite() {
                       className="text-[10px] font-bold uppercase tracking-wider"
                       style={{ color: 'var(--t4)' }}
                     >
-                      Réglo
+                      Réglementaire
                     </span>
                   </div>
                   <div
-                    className="num text-[17px] font-bold"
+                    className="text-[16px] font-bold"
                     style={{ color: 'var(--cleargo-navy)' }}
                   >
-                    418
-                    <span
-                      className="text-[11px] font-medium"
-                      style={{ color: 'var(--t4)' }}
-                    >
-                      /500
-                    </span>
+                    Solide
                   </div>
                 </div>
 
@@ -271,16 +256,10 @@ export function ProfilConformite() {
                     </span>
                   </div>
                   <div
-                    className="num text-[17px] font-bold"
+                    className="text-[16px] font-bold"
                     style={{ color: 'var(--green-text)' }}
                   >
-                    402
-                    <span
-                      className="text-[11px] font-medium"
-                      style={{ color: 'var(--t4)' }}
-                    >
-                      /500
-                    </span>
+                    À renforcer
                   </div>
                 </div>
               </div>
